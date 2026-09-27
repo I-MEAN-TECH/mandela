@@ -101,7 +101,13 @@ export async function provisionSchool(input: ProvisionSchoolInput): Promise<Prov
       [dbName],
     );
     if (found.rowCount && found.rowCount > 0) return "skipped";
-    await control.query(`CREATE DATABASE ${quoteIdent(dbName)}`);
+    // Explicit UTF8: the cluster may have been initdb'd with a Windows
+    // locale (WIN1252), and template inheritance would propagate that —
+    // any migration with a character above U+00FF would then fail to
+    // convert. LC_COLLATE/LC_CTYPE 'C' keeps creation locale-independent.
+    await control.query(
+      `CREATE DATABASE ${quoteIdent(dbName)} WITH ENCODING 'UTF8' TEMPLATE template0 LC_COLLATE 'C' LC_CTYPE 'C'`,
+    );
     return "succeeded";
   });
 

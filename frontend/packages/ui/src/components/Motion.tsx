@@ -41,7 +41,15 @@ export function Reveal({
       { rootMargin: "0px 0px -8% 0px", threshold: 0.05 },
     );
     io.observe(el);
-    return () => io.disconnect();
+    // FAILSAFE — content must never be stuck invisible: background tabs,
+    // print, and headless renders may never fire the observer. After a
+    // beat, reveal regardless (the animation is decoration; the data is
+    // the product).
+    const fail = window.setTimeout(() => setShown(true), 1200);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(fail);
+    };
   }, []);
 
   return (

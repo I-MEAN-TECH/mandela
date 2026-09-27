@@ -48,9 +48,11 @@ async function main() {
           parent: ["Home", "Pay", "Homework", "Messages", "Profile"],
           teacher: ["Today", "Mark", "Homework", "Messages", "Class"],
           bursar: ["Today", "Collect", "Reconcile", "Levies", "Reports"],
-          principal: ["Today", "Approve", "Insights", "Broadcast", "Directory"],
-          admin: ["Today", "People", "Money", "Insights", "Settings"],
+          principal: ["Today", "Academics", "Operations", "Approve", "Reports", "Broadcast", "Directory"],
+          // 028_ia_eight_mains: eight mains x 4-5 children (owner-approved).
+          admin: ["Today", "Money", "Spend", "People", "Academics", "Operations", "Care", "Insights", "Settings"],
           driver: ["Route", "Manifest", "Done"],
+          counter: ["Today", "Visitors", "Inquiries", "Directory", "Calendar"],
         }),
       ],
     );

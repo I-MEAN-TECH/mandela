@@ -24,8 +24,8 @@ export default async function DirectoryPage() {
   return (
     <div>
       <SerifHeader
-        crumb={`${boot.school.name} · People`}
-        title={<>Who runs <em>the school.</em></>}
+        crumb={`${boot.school.name} / People`}
+        title={<>Who runs the school.</>}
         sub="Every staff member, their role and classes — the school's own staff directory."
         actions={<AppLiveBar />}
       />

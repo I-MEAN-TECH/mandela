@@ -1,6 +1,7 @@
 import { requireSession, requireBootstrap, getMessages, getGuardianMessages } from "@/lib/api";
 import { Card, CardHead, DataTable, EmptyState, SerifHeader, StatusPill } from "@mandela/ui";
 import { redirect } from "next/navigation";
+import { noun } from "@/lib/plural";
 import { AppLiveBar } from "../LiveBar";
 
 /**
@@ -16,8 +17,8 @@ export default async function MessagesPage() {
     return (
       <div>
         <SerifHeader
-          crumb={`${boot.school.name} · Messages`}
-          title={<>What the school <em>told you.</em></>}
+          crumb={`${boot.school.name} / Messages`}
+          title={<>What the school told you.</>}
           sub="Every announcement sent to your phone, with its delivery state."
           actions={<AppLiveBar />}
         />
@@ -55,9 +56,9 @@ export default async function MessagesPage() {
   return (
     <div>
       <SerifHeader
-        crumb={`${boot.school.name} · Talk`}
-        title={<>Did it <em>land?</em></>}
-        sub={`${sent} of ${messages.length} messages delivered — WhatsApp and SMS receipts, newest first.`}
+        crumb={`${boot.school.name} / Talk`}
+        title={<>Did it land?</>}
+        sub={`${sent} of ${messages.length} ${noun(messages.length, "message", "messages")} delivered — WhatsApp and SMS receipts, newest first.`}
         actions={<AppLiveBar />}
       />
 

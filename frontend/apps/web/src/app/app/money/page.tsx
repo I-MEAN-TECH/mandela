@@ -1,6 +1,7 @@
 import { requireSession, requireBootstrap, getCollections, getPayments, getLearners, recordPaymentAction } from "@/lib/api";
 import { Card, CardHead, KpiCard, Meter, Money, StatusPill, DataTable, EmptyState, SerifHeader } from "@mandela/ui";
 import { redirect } from "next/navigation";
+import { noun } from "@/lib/plural";
 import { PayForm } from "./PayForm";
 
 const ledgerColumns = [
@@ -33,15 +34,15 @@ export default async function MoneyPage() {
   return (
     <div>
       <SerifHeader
-        crumb="Money · Term 3"
-        title={<>The money, <em>by class.</em></>}
+        crumb="Money / Term 3"
+        title={<>The money, by class.</>}
         sub="What's billed, what landed, and what to chase — one screen, one truth."
       />
 
       <div className="mt-s7 grid gap-s3h">
         {/* KPI trio */}
         <div className="grid gap-s3h sm:grid-cols-2 xl:grid-cols-3">
-          <KpiCard label="Billed this term" value={<Money cents={totalBilled} />} note={`${learners.learners.length} learners on roll`} />
+          <KpiCard label="Billed this term" value={<Money cents={totalBilled} />} note={`${learners.learners.length} ${noun(learners.learners.length, "learner")} on roll`} />
           <KpiCard label="Collected" tone="ok" value={<Money cents={totalPaid} />} note={`${rate}% of billed`} meter={{ value: rate, ok: true }} />
           <KpiCard label="Outstanding" tone="danger" value={<Money cents={outstanding} />} note={`${kes.format(outstanding / 100)} to collect`} meter={{ value: Math.max(100 - rate, 0) }} />
         </div>

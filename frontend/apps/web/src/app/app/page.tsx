@@ -1,7 +1,19 @@
-import { requireSession, requireBootstrap, getStaffHome, getGuardianHome, getAnnouncements, getCollections, getPayments, type StaffHomeData, type GuardianHomeData } from "@/lib/api";
+import { requireSession, requireBootstrap, getStartState, getPrincipalHat, getStaffHome, getGuardianHome, getAnnouncements, getCollections, getPayments, getAdminPulse, getPulseActions, getOnboardingState, getClasses, getRoster, markAttendanceAction, getTeacherPulse, getBursarPulse, getPrincipalPulse, getCounterPulse, getDriverPulse, getDormParentPulse, getJanitorPulse, getLibrarianPulse, getPatronPulse, getHodPulse, type StaffHomeData, type GuardianHomeData, type AdminPulseData, type OnboardingState, type TeacherPulseData, type BursarPulseData, type PrincipalPulseData, type CounterPulseData, type DriverPulseData, type DormParentPulseData, type JanitorPulseData, type LibrarianPulseData, type PatronPulseData, type HodPulseData } from "@/lib/api";
+import { BursarToday, PrincipalToday, CounterToday, DriverToday, TeacherToday, DormParentToday, JanitorToday, LibrarianToday, PatronToday, HodToday } from "./RolePulses";
+import { MarkButtons } from "./mark/MarkButtons";
+import { ArrowRight } from "lucide-react";
 import { Card, CardHead, KpiCard, Meter, Delta, Money, StatusPill, EmptyState, SerifHeader, Reveal, CountUpMoney, CountUp } from "@mandela/ui";
 import { AppLiveBar } from "./LiveBar";
+import { noun } from "@/lib/plural";
+import { AdminPulse } from "./AdminPulse";
+import { PulseActions } from "./PulseActions";
+import type { PulseApproval, PulseTask } from "@/lib/api";
+import { PrincipalSections } from "./PrincipalSections";
+import { PrincipalHatToggle } from "./PrincipalHatToggle";
+import { OnboardingWizard } from "./OnboardingWizard";
+import { AiAnomalyCard } from "./AiAnomalyCard";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 /**
  * /app — the role's world, in comp 02's bento — now alive: numbers count
@@ -15,26 +27,96 @@ export default async function AppHome() {
   const roleKey = me.principal.kind === "guardian" ? "parent" : me.principal.role ?? "admin";
   const prime = boot.prime_questions[roleKey] ?? "";
 
+  // Phase 3: un-landed staff confirm their role on /app/start first; landed
+  // staff land on their perm_matrix.landing route (Settings-editable, as
+  // data). Guardians and admin/principal stay on /app (Parent home / Pulse).
+  if (me.principal.kind === "staff") {
+    const start = await getStartState();
+    if (start && !start.error) {
+      if (!start.landed) redirect("/app/start");
+      const target = start.landing ?? "/app";
+      const isLeader = ["admin", "principal"].includes(me.principal.role ?? "");
+      if (!isLeader && target !== "/app") redirect(target);
+    }
+  }
+  const hasHat = me.principal.kind === "staff" && ["admin", "principal"].includes(me.principal.role ?? "")
+    ? await getPrincipalHat().catch(() => false)
+    : false;
+
   const isGuardian = me.principal.kind === "guardian";
   const hour = new Date().getHours();
   const greet = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const firstName = me.principal.full_name.split(/\s+/)[0] ?? me.principal.full_name;
   const today = new Date().toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" });
 
-  const [home, announcements, collections, payments] = await Promise.all([
-    isGuardian ? getGuardianHome() : getStaffHome(),
+  const canSeeMoney = !isGuardian && ["bursar", "principal", "admin"].includes(me.principal.role ?? "");
+  // The Admin lands on the governance pulse, not the generic staff home.
+  const isAdmin = !isGuardian && ["admin", "principal"].includes(me.principal.role ?? "");
+  // Phase 5 + 6 — every staff role gets their own Today (§6.2–6.11).
+  const role = me.principal.kind === "guardian" ? null : me.principal.role ?? null;
+  const isWave1 = !isGuardian &&
+    ["teacher", "bursar", "counter", "driver", "dorm_parent", "janitor", "librarian", "patron", "hod"].includes(role ?? "");
+  const isPrincipalRole = !isGuardian && role === "principal";
+
+  // Teacher first-run (§6.3): if nothing is marked today, Today IS the mark
+  // screen — the roster replaces the whole dashboard, nothing precedes it.
+  if (role === "teacher") {
+    const tp = await getTeacherPulse();
+    if ("error" in (tp as { error?: string })) {
+      // fall through to the generic staff home on error
+    } else if (!(tp as TeacherPulseData).marked_today) {
+      const classes = await getClasses();
+      const first = (tp as TeacherPulseData).class_id ?? classes.classes[0]?.id;
+      const roster = first ? (await getRoster(first)).roster : [];
+      const cls = classes.classes.find((c) => c.id === first);
+      return (
+        <div>
+          <SerifHeader
+            crumb={`Today · ${today}`}
+            title={<>Who's here, who's not.</>}
+            sub={cls ? `Mark ${cls.name} — two taps per learner, saved to the roll.` : "Two taps per learner — the roster and today's marks come straight from the school database."}
+            actions={<AppLiveBar />}
+          />
+          <div className="mt-s7">
+            <Card>
+              <CardHead title="Today's roster" sub="Present · Late · Absent · Excused" />
+              {roster.length === 0 ? <EmptyState title="No learners" body="This class has no active learners yet." /> : <MarkButtons roster={roster} action={markAttendanceAction} />}
+            </Card>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  const [home, announcements, collections, payments, pulse, onboarding, actions, rolePulse] = await Promise.all([
+    isGuardian ? getGuardianHome() : isAdmin || isWave1 || isPrincipalRole ? Promise.resolve(null) : getStaffHome(),
     getAnnouncements(),
     isGuardian ? Promise.resolve({ collections: [] }) : getCollections(),
-    isGuardian ? Promise.resolve({ payments: [] }) : getPayments(),
+    isGuardian || isAdmin ? Promise.resolve({ payments: [] }) : getPayments(),
+    isAdmin ? getAdminPulse() : Promise.resolve(null),
+    isAdmin ? getOnboardingState() : Promise.resolve(null),
+    isAdmin ? getPulseActions() : Promise.resolve(null),
+    role === "teacher" ? getTeacherPulse()
+      : role === "bursar" ? getBursarPulse()
+      : isPrincipalRole ? getPrincipalPulse()
+      : role === "counter" ? getCounterPulse()
+      : role === "driver" ? getDriverPulse()
+      : role === "dorm_parent" ? getDormParentPulse()
+      : role === "janitor" ? getJanitorPulse()
+      : role === "librarian" ? getLibrarianPulse()
+      : role === "patron" ? getPatronPulse()
+      : role === "hod" ? getHodPulse()
+      : Promise.resolve(null),
   ]);
 
-  const canSeeMoney = !isGuardian && ["bursar", "principal", "admin"].includes(me.principal.role ?? "");
+  // Phase 4 — the setup wizard rides the admin Pulse until 5/5 (then dismissible).
+  const wizard = onboarding && onboarding.steps_done < 5 ? <OnboardingWizard state={onboarding} /> : null;
 
   return (
     <>
       <SerifHeader
         crumb={`Today · ${today}`}
-        title={<>{greet}, <em>{firstName}.</em></>}
+        title={<>{greet}, {firstName}.</>}
         sub={prime}
         actions={<AppLiveBar />}
       />
@@ -42,6 +124,53 @@ export default async function AppHome() {
       <div className="mt-s7 grid gap-s3h">
         {isGuardian ? (
           <GuardianHome data={home as GuardianHomeData} />
+        ) : role === "bursar" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><BursarToday p={rolePulse as BursarPulseData} /></Reveal>
+        ) : isPrincipalRole && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><PrincipalToday p={rolePulse as PrincipalPulseData} /></Reveal>
+        ) : role === "counter" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><CounterToday p={rolePulse as CounterPulseData} /></Reveal>
+        ) : role === "driver" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><DriverToday p={rolePulse as DriverPulseData} /></Reveal>
+        ) : role === "teacher" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><TeacherToday p={rolePulse as TeacherPulseData} /></Reveal>
+        ) : role === "dorm_parent" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><DormParentToday p={rolePulse as DormParentPulseData} /></Reveal>
+        ) : role === "janitor" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><JanitorToday p={rolePulse as JanitorPulseData} /></Reveal>
+        ) : role === "librarian" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><LibrarianToday p={rolePulse as LibrarianPulseData} /></Reveal>
+        ) : role === "patron" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><PatronToday p={rolePulse as PatronPulseData} /></Reveal>
+        ) : role === "hod" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
+          <Reveal><HodToday p={rolePulse as HodPulseData} /></Reveal>
+        ) : isAdmin ? (
+          <>
+            <AdminPulse
+              pulse={pulse as AdminPulseData | { error: string }}
+              collections={(collections as { collections: { class: string; billed_cents: string; paid_cents: string }[] }).collections}
+            />
+            {/* C11 — inline approvals/tasks: act from the Pulse, record kept by the same endpoints. */}
+            {actions && !("error" in (actions as { error?: string })) ? (
+              <Reveal delay={60}>
+                <PulseActions approvals={(actions as { approvals: PulseApproval[] }).approvals} tasks={(actions as { tasks: PulseTask[] }).tasks} />
+              </Reveal>
+            ) : null}
+            {/* §6.1 — the Principal hat surfaces the §6.2 sections in the same Pulse. */}
+            {hasHat ? (
+              <Reveal delay={120}>
+                <PrincipalSections pulse={pulse as AdminPulseData} />
+              </Reveal>
+            ) : null}
+            <Reveal delay={160}>
+              <PrincipalHatToggle on={hasHat} />
+            </Reveal>
+            {wizard ? (
+              <Reveal delay={200}>
+                {wizard}
+              </Reveal>
+            ) : null}
+          </>
         ) : (
           <StaffHome
             data={home as StaffHomeData}
@@ -52,9 +181,10 @@ export default async function AppHome() {
           />
         )}
 
-        {/* Latest from the school — announcements feed */}
+        {/* Latest from the school — announcements feed + anomaly flag */}
         <Reveal delay={200}>
           <section className="mt-s3h grid gap-s3h lg:grid-cols-2">
+            {isAdmin ? <AiAnomalyCard /> : null}
             <Card>
               <CardHead
                 title="Latest from the school"
@@ -62,7 +192,8 @@ export default async function AppHome() {
                 action={
                   !isGuardian ? (
                     <Link href="/app/broadcast" className="inline-flex h-11 items-center text-[12.5px] font-semibold underline decoration-paper-300 underline-offset-4 hover:decoration-primary">
-                      Broadcast →
+                      Broadcast
+                      <ArrowRight aria-hidden size={14} strokeWidth={2} className="inline align-[-2px]" />
                     </Link>
                   ) : undefined
                 }
@@ -171,18 +302,18 @@ function StaffHome({
             >
               <div>
                 <Delta tone={outstanding > 0 ? "danger" : "ok"}>
-                  {outstanding > 0 ? "▲ still to collect" : "✓ fully collected"}
+                  {outstanding > 0 ? "still to collect" : "fully collected"}
                 </Delta>
               </div>
             </KpiCard>
           ) : (
-            <KpiCard label="Active learners" value={<CountUp value={data.count} />} note="learners on roll" />
+            <KpiCard label="Active learners" value={<CountUp value={data.count} />} note="on roll today" />
           )}
 
           <KpiCard
             label="Attendance today"
             value={<><CountUp value={attRate} /><span className="text-xl font-medium text-ink-500">%</span></>}
-            note={`${att.present} present · ${att.absent} absent`}
+            note={`${att.present} ${noun(att.present, "learner")} present · ${att.absent} ${noun(att.absent, "learner")} absent`}
           >
             <div>
               <Delta tone={att.marked >= att.expected && att.expected > 0 ? "ok" : "neutral"}>
@@ -203,7 +334,8 @@ function StaffHome({
               action={
                 canSeeMoney ? (
                   <Link href="/app/money" className="inline-flex h-11 items-center text-[12.5px] font-semibold underline decoration-paper-300 underline-offset-4 hover:decoration-primary">
-                    View ledger →
+                    View ledger
+                    <ArrowRight aria-hidden size={14} strokeWidth={2} className="inline align-[-2px]" />
                   </Link>
                 ) : undefined
               }
@@ -261,7 +393,9 @@ function StaffHome({
                   className="flex min-h-[48px] items-center justify-between rounded-sm border border-paper-200 px-4 py-3 text-[13.5px] font-semibold text-text transition-all hover:-translate-y-px hover:bg-paper-50 hover:shadow-1"
                 >
                   {a.label}
-                  <span aria-hidden className="text-muted transition-transform duration-300 ease-[cubic-bezier(.22,1,.36,1)] group-hover:translate-x-0.5">→</span>
+                  <span aria-hidden>
+                    <ArrowRight size={14} strokeWidth={2} />
+                  </span>
                 </Link>
               ))}
             </div>
@@ -278,7 +412,8 @@ function StaffHome({
               sub="Billed vs collected, this term"
               action={
                 <Link href="/app/money" className="inline-flex h-11 items-center text-[12.5px] font-semibold underline decoration-paper-300 underline-offset-4 hover:decoration-primary">
-                  All classes →
+                  All classes
+                  <ArrowRight aria-hidden size={14} strokeWidth={2} className="inline align-[-2px]" />
                 </Link>
               }
             />

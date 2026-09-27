@@ -1,4 +1,4 @@
-import { requireSession, requireBootstrap } from "@/lib/api";
+import { requireSession, requireBootstrap, getPrincipalHat } from "@/lib/api";
 import { AppShell } from "./AppShell";
 
 /**
@@ -14,6 +14,22 @@ import { AppShell } from "./AppShell";
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [me, boot] = await Promise.all([requireSession(), requireBootstrap()]);
   const roleKey = me.principal.kind === "guardian" ? "parent" : me.principal.role ?? "admin";
+  // §5 — one person, both hats: an admin holding the Principal hat shows both
+  // titles in the shell (and gets the Principal sections on the Pulse).
+  const hasHat =
+    me.principal.kind === "staff" && ["admin", "principal"].includes(me.principal.role ?? "")
+      ? await getPrincipalHat().catch(() => false)
+      : false;
+  const titles =
+    me.principal.kind === "guardian"
+      ? null
+      : (me.principal.role ?? "staff").replace(/^\w/, (c) => c.toUpperCase());
+  const userMeta =
+    me.principal.kind === "guardian"
+      ? "Guardian · signed in"
+      : titles === "Admin" && hasHat
+        ? "Admin · Principal · signed in"
+        : `${titles} · signed in`;
 
   return (
     <AppShell
@@ -22,11 +38,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       logoPath={boot.school.logo_svg_path}
       tabs={boot.nav[roleKey] ?? []}
       userName={me.principal.full_name}
-      userMeta={
-        me.principal.kind === "guardian"
-          ? "Guardian · signed in"
-          : `${(me.principal.role ?? "staff").replace(/^\w/, (c) => c.toUpperCase())} · signed in`
-      }
+      userMeta={userMeta}
+      principalHat={hasHat}
     >
       {children}
     </AppShell>

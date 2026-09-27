@@ -16,11 +16,11 @@ export function ConfirmButtons({
   function confirm() {
     start(async () => {
       const res = await action({ receiptNo });
-      setMsg(res.ok ? "Confirmed ✓" : (res.error ?? "Failed"));
+      setMsg(res.ok ? "Confirmed — done" : (res.error ?? "Failed"));
     });
   }
 
-  if (msg?.endsWith("✓")) {
+  if (msg?.includes("done")) {
     return <span className="text-sm font-semibold text-ok" role="status">{msg}</span>;
   }
 

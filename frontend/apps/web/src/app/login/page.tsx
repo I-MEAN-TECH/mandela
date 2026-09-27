@@ -13,7 +13,7 @@ export default async function LoginPage() {
       <div className="hidden flex-col bg-brand-deep p-s7 text-brand-deep-contrast md:flex">
         <div className="flex items-center gap-3">
           {s.logo_svg_path ? (
-            <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-white text-ink-950">
+            <span className="grid h-10 w-10 place-items-center rounded-sm bg-white text-ink-950">
               <MandelaMark path={s.logo_svg_path} className="h-5 w-5" title={s.name} />
             </span>
           ) : null}
@@ -49,7 +49,7 @@ export default async function LoginPage() {
           {/* compact brand for mobile (ink half is hidden) */}
           <div className="mb-s6 flex items-center gap-3 md:hidden">
             {s.logo_svg_path ? (
-              <span className="grid h-10 w-10 place-items-center rounded-[10px] bg-primary text-on-primary">
+              <span className="grid h-10 w-10 place-items-center rounded-sm bg-primary text-on-primary">
                 <MandelaMark path={s.logo_svg_path} className="h-5 w-5" title={s.name} />
               </span>
             ) : null}

@@ -19,8 +19,8 @@ export default async function ApprovePage() {
   return (
     <div>
       <SerifHeader
-        crumb={`${boot.school.name} · Principal`}
-        title={<>What needs <em>you.</em></>}
+        crumb={`${boot.school.name} / Principal`}
+        title={<>What needs you.</>}
         sub="Pending money to confirm, the staff register at a glance — approvals are audit-logged."
         actions={<AppLiveBar />}
       />
@@ -35,7 +35,7 @@ export default async function ApprovePage() {
         <Card>
           <CardHead title="Confirm payments" sub="Confirming issues the receipt and logs the audit entry" />
           {pending.length === 0 ? (
-            <EmptyState title="Nothing to approve ✓" body="The money queue is clear." />
+            <EmptyState title="Nothing to approve — done" body="The money queue is clear." />
           ) : (
             <div>
               {pending.map((p) => (

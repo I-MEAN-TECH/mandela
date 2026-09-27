@@ -9,6 +9,7 @@
  */
 @source "../../../../packages/ui";
 @source "./";
+@source "../components";
 
 /*
  * Tailwind v4 setup: tokens.css is the single source of visual truth.
@@ -29,6 +30,29 @@
   --color-paper-200: var(--paper-200);
   --color-paper-300: var(--paper-300);
   --color-paper-400: var(--paper-400);
+  --color-lime-50: var(--lime-50);
+  --color-lime-100: var(--lime-100);
+  --color-lime-200: var(--lime-200);
+  --color-lime-300: var(--lime-300);
+  --color-lime-400: var(--lime-400);
+  --color-lime-500: var(--lime-500);
+  --color-lime-600: var(--lime-600);
+  --color-lime-700: var(--lime-700);
+  --color-pine-50: var(--pine-50);
+  --color-pine-100: var(--pine-100);
+  --color-pine-200: var(--pine-200);
+  --color-pine-300: var(--pine-300);
+  --color-pine-400: var(--pine-400);
+  --color-pine-500: var(--pine-500);
+  --color-pine-600: var(--pine-600);
+  --color-pine-700: var(--pine-700);
+  --color-pine-800: var(--pine-800);
+  --color-pine-900: var(--pine-900);
+  --color-pine-950: var(--pine-950);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-border: var(--border);
@@ -36,7 +60,9 @@
   --color-muted: var(--text-muted);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
   --color-on-primary: var(--on-primary);
+  --color-ambient-panel: var(--ambient-panel);
   --color-ring: var(--ring);
   --color-brand-deep: var(--brand-deep);
   --color-brand-deep-contrast: var(--brand-deep-contrast);
@@ -80,7 +106,7 @@
 
   /* next/font families (layout.tsx) with system fallbacks */
   --font-sans: var(--inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-serif: var(--mandela-serif), Georgia, "Times New Roman", serif;
+  --font-display: var(--poppins), var(--inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--mandela-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
   --ease-mandela: cubic-bezier(.22,1,.36,1);
@@ -94,19 +120,25 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Serif display moments — greetings, section statements */
-.display {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  letter-spacing: -0.015em;
-  line-height: 1.05;
-}
-.display em {
-  font-style: italic;
-  color: var(--ink-700);
+/* Lime follows the reader's hand — the accent follows selection. */
+::selection {
+  background: var(--lime-200);
+  color: var(--pine-950);
 }
 
-/* Mono micro-labels — the comp's uppercase tracking labels */
+/* Page display headings — Poppins (the reference's geometric voice) */
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.display em {
+  font-style: normal;
+  color: var(--pine-500);
+}
+
+/* Mono micro-labels — uppercase tracking labels */
 .microlabel {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -117,13 +149,32 @@ body {
 }
 
 /* Big numerals — always tabular so columns of money line up */
+
+/* Grid floor guard (below xl only) — grid items may shrink to 0 so wide
+   children (tables, long numbers) scroll INSIDE their card instead of
+   blowing single-column phone layouts out sideways. At xl+ the multi-column
+   tracks are wide enough to size naturally, so the guard steps aside. */
+@media (max-width: 1279px) {
+  main [class*='grid'] > * {
+    min-width: 0;
+  }
+}
+
 .numeral {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 1;
 }
 
-/* Motion language — staggered float-up (comp: MotionImplied cue 1) */
+/* Scrollable chip rows: hide the raw scrollbar, the fade edge does the talking. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Motion language — staggered float-up */
 @media (prefers-reduced-motion: no-preference) {
   .rise {
     animation: rise .55s var(--ease-mandela) both;
@@ -151,4 +202,134 @@ body {
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up { animation: none; }
+}
+
+/* Bottom sheet — the mobile "More" modules tray */
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-sheet-up { animation: sheet-up .28s var(--ease-mandela) both; }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in { animation: fade-in .2s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-up,
+  .animate-fade-in { animation: none; }
+}
+
+@media print {
+  /* Statement sheet 13: print only the sheet — hide the app chrome and
+     pin the overlay to the page so the parent gets a clean paper proof. */
+  @page {
+    margin: 14mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  [data-statement],
+  [data-statement] * {
+    visibility: visible;
+  }
+  [data-statement] {
+    position: fixed;
+    inset: 0;
+    max-width: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: white;
+  }
+}
+
+/* /print/* document routes (report card, fee statement): the page IS the
+   document — nothing to isolate, just A4 margins and no shadows. */
+@media print {
+  body:has([data-doc]) * {
+    visibility: visible;
+  }
+  [data-doc] {
+    max-width: none;
+    padding: 0;
+  }
+  [data-doc] .print\:hidden {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   VIEW MODE — every section reads as Cards (designed surfaces) or as a
+   compact List (ledger). The choice belongs to the user, per section
+   (data-viewscope = first two path segments), persisted in localStorage.
+   ViewMode.tsx owns the state machine; this layer only restyles:
+
+     · data-card surfaces (ui Card) lose their lift/shadow and stack as
+       hairline ledger rows — the CardHead becomes the row's spine,
+     · data-kpi tiles flatten into a tight strip (KPIs stay readable at a
+       glance even in ledger mode),
+     · every grid on the page collapses to ONE column so rows read
+       full-width, like a register, and
+     · hairline row separators appear on any ul/li and DataTable already
+       is a table.
+   Phones (≤640px) always get the card geometry — a ledger wants width
+   the phone does not have.
+   ========================================================================== */
+
+@media (min-width: 641px) {
+  /* 1) Card stacks become one column — rows read full-width like a register.
+     Scoped with :has() so KPI strips / chart grids keep their columns:
+     a grid collapses only when it holds cards and NO kpi tiles. */
+  main[data-view="list"] [class*='grid']:has([data-card]):not(:has([data-kpi])) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* 2) Cards flatten into ledger rows. */
+  main[data-view="list"] [data-card] {
+    box-shadow: none;
+    border: none;
+    border-bottom: 1px solid var(--paper-200);
+    border-radius: 0;
+    padding: var(--s4) var(--s1);
+    transition: none;
+  }
+  main[data-view="list"] [data-card]:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* CardHead becomes the row spine: single line, tighter. */
+  main[data-view="list"] [data-card] > header {
+    margin-bottom: var(--s2);
+    align-items: baseline;
+  }
+  main[data-view="list"] [data-card] > header h2 {
+    font-size: 15px;
+  }
+
+  /* 3) KPI tiles: keep the anchor ink card, flatten the rest into a strip. */
+  main[data-view="list"] [data-kpi] {
+    box-shadow: none;
+    border-radius: 0;
+    padding: var(--s3) var(--s2);
+  }
+
+  /* 4) Lists inside cards: hairline rows, tighter rhythm. */
+  main[data-view="list"] [data-card] ul {
+    row-gap: 0;
+  }
+  main[data-view="list"] [data-card] ul > li {
+    border-bottom: 1px solid var(--paper-200);
+    padding-top: var(--s2);
+    padding-bottom: var(--s2);
+  }
+  main[data-view="list"] [data-card] ul > li:last-child {
+    border-bottom: none;
+  }
+
+  /* 5) Reveal animation off in ledger mode — a register appears, it doesn't float in. */
+  main[data-view="list"] .rise {
+    animation: none;
+  }
 }

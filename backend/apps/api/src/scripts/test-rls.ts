@@ -146,8 +146,13 @@ async function main() {
     console.log("\nRLS behavioral test (role: mandela_app, no BYPASSRLS)");
 
     await asRole(DB, { userId: ids.guardianId, role: "guardian", guardianId: ids.guardianId }, async (c) => {
-      const learners = await c.query("SELECT admission_no FROM learner");
-      assert(learners.rowCount === 1, `guardian sees exactly 1 learner (got ${learners.rowCount})`);
+      const learners = await c.query<{ admission_no: string }>("SELECT admission_no FROM learner");
+      // Grace Otieno's family grew by admissions (Davis Otieno, ADM-007) -
+      // the guardian sees their OWN children, however many (isolation, not a
+      // magic number): every row they see must be linked to their guardian id.
+      const mine = learners.rows.filter((r) => r.admission_no === "ADM-001").length;
+      assert(mine === 1, `guardian sees ADM-001 (got ${mine})`);
+      assert((learners.rowCount ?? 0) >= 1, `guardian sees only their children (got ${learners.rowCount}, must include ADM-001)`);
 
       const fees = await c.query<{ admission_no: string }>(
         `SELECT l.admission_no FROM fee_item fi JOIN learner l ON l.id = fi.learner_id`,

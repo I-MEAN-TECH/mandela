@@ -1,41 +1,81 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { MandelaMark } from "@mandela/ui";
+import { MandelaMark, ViewToggle, viewScopeOf, readStoredView } from "@mandela/ui";
 import { NavPill } from "@/components/NavPill";
+import { SearchBox } from "@/components/SearchBox";
+import { BellMenu } from "@/components/BellMenu";
+import { ProfileMenu } from "@/components/ProfileMenu";
+import { NAV_CHILDREN, CHILD_ICONS } from "./navModules";
+import { SyncBanner } from "@/components/SyncBanner";
+import { InstallPrompt } from "@/components/InstallPrompt";
+import {
+  LayoutDashboard, Landmark, GraduationCap, Users, ChartLine, Settings,
+  CalendarCheck, Banknote, ClipboardCheck, FileText, ArrowLeftRight, HandCoins,
+  ClipboardList, IdCard, Receipt, Sparkles, LogOut, Route, Check, HeartPulse, Store,
+} from "lucide-react";
+import { SubChips } from "./SubChips";
+
+/** Per-section view (Cards ⇄ List): re-apply the user's stored choice on
+    client navigations — the <main> element survives route changes, so the
+    attribute must follow the section. (First paint is covered by the
+    pre-paint bootstrap in the root layout.) */
+function useViewMode() {
+  const pathname = usePathname();
+  const section = viewScopeOf(pathname);
+  useEffect(() => {
+    const stored = readStoredView(section);
+    const main = document.querySelector("main");
+    if (!main) return;
+    if (stored === "list") {
+      main.setAttribute("data-view", "list");
+      main.setAttribute("data-viewscope", section);
+    } else {
+      main.removeAttribute("data-view");
+      main.removeAttribute("data-viewscope");
+    }
+  }, [section]);
+}
 
 /**
- * AppShell — comp 02's frame, now left-anchored at every width: the ink
- * sidebar is ALWAYS on the left (icon-only rail on narrow screens, full
- * labels + user block from md up). Tabs and labels come from
- * school_settings.nav — this component never hardcodes a school's navigation.
+ * AppShell — the reference frame: full-bleed white shell, edge to edge.
+ * INSIDE it a sage sidebar (logo card, labeled nav with the active frame,
+ * "Get Pro"-style card pinned at the bottom) and the content column with a
+ * topbar (page title, search field, bell with dot, user chip). The profile
+ * avatar shows at every width — on phones it is the only account control.
  */
 
 const ICONS: Record<string, React.ReactNode> = {
-  Today: <path d="M4 5h16v15H4zM4 9h16M8 3v4M16 3v4" />,
-  Money: <path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
-  Collect: <path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
-  Pay: <path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
-  Mark: <path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5" />,
-  People: <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />,
-  Class: <path d="M22 10v6M2 10l10-5 10 5-10 5zM6 12v5c3 3 9 3 12 0v-5" />,
-  Homework: <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />,
-  Messages: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
-  Broadcast: <path d="M22 2 11 13M22 2l-7 20-4-9-9-4z" />,
-  Insights: <path d="M3 3v18h18M18 9l-5 5-3-3-4 4" />,
-  Approve: <path d="M20 6 9 17l-5-5" />,
-  Directory: <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" />,
-  Reconcile: <path d="M3 3v18h18M18 9l-5 5-3-3-4 4" />,
-  Levies: <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />,
-  Reports: <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8" />,
-  Settings: <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />,
-  Profile: <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 1 0 8 4 4 0 0 1 0-8z" />,
-  Route: <path d="M3 3v18h18M18 9l-5 5-3-3-4 4" />,
-  Manifest: <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8" />,
-  Done: <path d="M20 6 9 17l-5-5" />,
+  Today: <LayoutDashboard size={18} strokeWidth={1.75} aria-hidden />,
+  Money: <Landmark size={18} strokeWidth={1.75} aria-hidden />,
+  Spend: <HandCoins size={18} strokeWidth={1.75} aria-hidden />,
+  Care: <HeartPulse size={18} strokeWidth={1.75} aria-hidden />,
+  Store: <Store size={18} strokeWidth={1.75} aria-hidden />, // legacy 024-era label
+  Academics: <GraduationCap size={18} strokeWidth={1.75} aria-hidden />,
+  Operations: <CalendarCheck size={18} strokeWidth={1.75} aria-hidden />,
+  People: <Users size={18} strokeWidth={1.75} aria-hidden />,
+  Insights: <ChartLine size={18} strokeWidth={1.75} aria-hidden />,
+  Settings: <Settings size={18} strokeWidth={1.75} aria-hidden />,
+  // Role dashboards
+  Collect: <Banknote size={18} strokeWidth={1.75} aria-hidden />,
+  Approve: <ClipboardCheck size={18} strokeWidth={1.75} aria-hidden />,
+  Reports: <FileText size={18} strokeWidth={1.75} aria-hidden />,
+  Reconcile: <ArrowLeftRight size={18} strokeWidth={1.75} aria-hidden />,
+  Pay: <HandCoins size={18} strokeWidth={1.75} aria-hidden />,
+  Mark: <ClipboardCheck size={18} strokeWidth={1.75} aria-hidden />,
+  Class: <Users size={18} strokeWidth={1.75} aria-hidden />,
+  Directory: <IdCard size={18} strokeWidth={1.75} aria-hidden />,
+  Levies: <Receipt size={18} strokeWidth={1.75} aria-hidden />,
+  Broadcast: <Sparkles size={18} strokeWidth={1.75} aria-hidden />,
+  Messages: <Sparkles size={18} strokeWidth={1.75} aria-hidden />,
+  Homework: <ClipboardList size={18} strokeWidth={1.75} aria-hidden />,
+  Profile: <IdCard size={18} strokeWidth={1.75} aria-hidden />,
+  Route: <Route size={18} strokeWidth={1.75} aria-hidden />,
+  Manifest: <ClipboardList size={18} strokeWidth={1.75} aria-hidden />,
+  Done: <Check size={18} strokeWidth={1.75} aria-hidden />,
 };
 
-const FALLBACK_ICON = <path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />;
 
 function tabToHref(tab: string, first: string): string {
   const map: Record<string, string> = {
@@ -46,6 +86,8 @@ function tabToHref(tab: string, first: string): string {
     Today: "/app",
     Mark: "/app/mark",
     Class: "/app/class",
+    Spend: "/app/people/payroll",
+    Care: "/app/operations/hostel",
     Collect: "/app/money",
     Reconcile: "/app/reconcile",
     Levies: "/app/levies",
@@ -56,6 +98,7 @@ function tabToHref(tab: string, first: string): string {
     Directory: "/app/directory",
     People: "/app/people",
     Money: "/app/money",
+    Academics: "/app/academics",
     Settings: "/app/settings",
   };
   if (tab === first) return "/app";
@@ -78,6 +121,7 @@ export function AppShell({
   tabs,
   userName,
   userMeta,
+  principalHat = false,
   children,
 }: {
   schoolName: string;
@@ -86,10 +130,16 @@ export function AppShell({
   tabs: string[];
   userName: string;
   userMeta: string;
+  /** §5 — the admin also holds the Principal hat (shows both titles). */
+  principalHat?: boolean;
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const shown = tabs.slice(0, 6);
+  const pathname = usePathname();
+  useViewMode();
+  // The full map is shown — the calm-IA law is that every main is visible;
+  // 8 mains × 4-5 children fit the sidebar without scrolling.
+  const shown = tabs;
   const first = shown[0] ?? "Today";
 
   async function signOut() {
@@ -99,70 +149,161 @@ export function AppShell({
   }
 
   return (
-    <div className="flex min-h-dvh">
-      {/* SIDEBAR — always left. Icon rail on narrow screens, full labels from md up. */}
-      <aside className="sticky top-0 flex h-dvh w-[68px] shrink-0 flex-col bg-brand-deep px-3 py-6 text-brand-deep-contrast md:w-60 md:px-4">
-        <div className="mb-4 flex items-center justify-center gap-3 border-b border-deep-line px-2 pb-5 md:justify-start">
-          {logoPath ? (
-            <span className="grid h-9 w-9 place-items-center rounded-[9px] bg-white text-ink-950">
-              <MandelaMark path={logoPath} className="h-4.5 w-4.5" title={schoolName} />
+    <div className="min-h-dvh bg-surface">
+      {/* Full-bleed shell — the app fills the viewport edge to edge (no canvas
+          frame, no rounding). NB: NO overflow-hidden here — an overflow
+          ancestor would capture the sidebar's position:sticky (it would track
+          this box's scrollport, which never scrolls) and the nav would scroll
+          away with the page. */}
+      <div className="flex min-h-dvh bg-surface">
+        {/* SIDEBAR — sage panel, full height, sticky */}
+        <aside className="sticky top-0 flex h-dvh w-[68px] shrink-0 flex-col overflow-y-auto bg-ambient-panel px-3 py-6 md:w-[240px] md:px-4">
+          <div className="mb-6 flex items-center justify-center gap-2.5 px-1 md:justify-start md:px-2">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-sm bg-brand-deep text-white">
+              {logoPath ? (
+                <MandelaMark path={logoPath} className="h-4.5 w-4.5" title={schoolName} />
+              ) : (
+                <span className="text-xs font-bold">{initials(schoolName)}</span>
+              )}
             </span>
-          ) : null}
-          <span className="hidden min-w-0 md:block">
-            <span className="block truncate text-sm font-semibold tracking-[-0.01em]">{schoolName}</span>
-            {motto ? <span className="block truncate text-[11px] text-ink-400">{motto}</span> : null}
-          </span>
+            <span className="hidden min-w-0 md:block">
+              <span className="block truncate font-display text-[15px] font-bold uppercase tracking-[0.02em] text-ink-950">
+                {schoolName.split(/\s+/).slice(0, 2).join(" ")}
+              </span>
+              {motto ? <span className="mt-0.5 block text-[10.5px] leading-snug text-ink-500 line-clamp-2">{motto}</span> : null}
+            </span>
+          </div>
+
+          <p className="hidden px-3 pb-1.5 pt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-500 md:block">Menu</p>
+          <NavPill
+            responsive
+            className="flex flex-col gap-1"
+            items={shown.map((tab) => ({
+              href: tabToHref(tab, first),
+              label: tab,
+              icon: ICONS[tab] ?? (
+                <LayoutDashboard size={18} strokeWidth={1.75} aria-hidden />
+              ),
+              children: NAV_CHILDREN[tab]?.map((c) => ({
+                ...c,
+                icon: CHILD_ICONS[c.label],
+              })),
+            }))}
+          />
+
+          {/* The reference's "Get Pro" card — pinned at the sidebar's foot */}
+          <div className="mt-auto hidden px-1 pb-1 pt-6 md:block">
+            <div className="relative overflow-hidden rounded bg-brand-deep p-4 text-brand-deep-contrast shadow-1">
+              <Sparkles aria-hidden size={64} strokeWidth={1} className="absolute -right-3 -top-3 text-white/[0.07]" />
+              <span className="grid h-8 w-8 place-items-center rounded-sm bg-white/10 text-lime-300">
+                <Sparkles aria-hidden size={16} strokeWidth={1.75} />
+              </span>
+              <p className="mt-3 text-[12.5px] leading-snug text-white/75">
+                Every module your school runs, in one calm place.
+              </p>
+              <span className="mt-3 inline-flex h-9 items-center rounded-sm bg-accent px-3.5 text-[12.5px] font-semibold text-on-accent">
+                {schoolName.split(/\s+/)[0]}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-col items-center gap-2.5 px-1 pt-3 md:flex-row md:justify-start">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-pine-100 text-xs font-semibold text-pine-800">
+              {initials(userName)}
+            </span>
+            <span className="hidden min-w-0 flex-1 md:block">
+              <span className="block truncate text-[13px] font-semibold text-ink-950">{userName}</span>
+              <span className="block truncate text-[11px] text-ink-500">{userMeta}</span>
+            </span>
+            <button
+              onClick={signOut}
+              title="Sign out"
+              aria-label="Sign out"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-pill text-ink-500 transition-colors hover:bg-paper-200 hover:text-ink-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine-500"
+            >
+              <LogOut aria-hidden size={16} strokeWidth={1.75} />
+            </button>
+          </div>
+        </aside>
+
+        {/* MAIN COLUMN — topbar + content */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* TOPBAR — title left · search fills the middle · bell + profile right */}
+          <div className="flex flex-wrap items-center gap-x-s4 gap-y-2 px-4 pt-5 md:flex-nowrap md:px-8 md:pt-6">
+            <h1 className="min-w-0 max-w-full truncate font-display text-[22px] font-semibold tracking-[-0.01em] text-ink-950 md:max-w-none">
+              {pathname === "/app" ? "Dashboard" : titleFromPath(pathname, shown, first)}
+            </h1>
+            <div className="ml-auto flex min-w-0 items-center justify-end gap-2.5">
+              {/* Per-section view mode — the user's Cards ⇄ List choice. */}
+              <ViewToggle scope={viewScopeOf(pathname)} />
+              {/* LIVE search + LIVE bell — real DB-backed components */}
+              <SearchBox />
+              <BellMenu />
+              {/* LIVE profile menu — click opens account dropdown. Visible at
+                  every width: on phones the name hides itself and the avatar
+                  is the only tap target for profile/sign-out. */}
+              <span className="flex">
+                <ProfileMenu name={userName} meta={userMeta} />
+              </span>
+            </div>
+          </div>
+
+          {/* Banner + sub-chips strip — no flex-1 here: only <main> may grow,
+              otherwise this strip splits the free viewport height with main
+              and every module screen shows a giant blank band under the topbar. */}
+          <div className="mx-auto w-full max-w-7xl px-4 pt-4 md:px-10">
+            <SyncBanner />
+            {/* Phase 7 — one-tap A2HS (Android event / iOS sheet). */}
+            <InstallPrompt />
+            <SubChips />
+          </div>
+          {/* suppressHydrationWarning: the pre-paint view script (root layout)
+              may set data-view/data-viewscope before React hydrates — same
+              external-state pattern as ThemeVars on <html>. */}
+          <main
+            suppressHydrationWarning
+            className="mx-auto w-full max-w-7xl flex-1 px-4 pb-6 pt-2 md:px-10 md:pb-9"
+          >{children}</main>
         </div>
-
-        <p className="hidden px-3 pb-1.5 pt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-600 md:block">Work</p>
-        <NavPill
-          responsive
-          className="flex flex-col gap-0.5"
-          items={shown.map((tab) => ({
-            href: tabToHref(tab, first),
-            label: tab,
-            icon: (
-              <svg
-                viewBox="0 0 24 24"
-                className="h-[17px] w-[17px]"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                {ICONS[tab] ?? FALLBACK_ICON}
-              </svg>
-            ),
-          }))}
-        />
-
-        <div className="mt-auto flex flex-col items-center gap-2.5 border-t border-deep-line px-2 pt-4 md:flex-row md:justify-start">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-deep-line text-xs font-semibold text-white">
-            {initials(userName)}
-          </span>
-          <span className="hidden min-w-0 flex-1 md:block">
-            <span className="block truncate text-[13px] font-semibold">{userName}</span>
-            <span className="block truncate text-[11px] text-ink-400">{userMeta}</span>
-          </span>
-          <button
-            onClick={signOut}
-            title="Sign out"
-            aria-label="Sign out"
-            className="grid h-9 w-9 place-items-center rounded-pill text-ink-400 hover:bg-ink-900 hover:text-white"
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
-            </svg>
-          </button>
-        </div>
-      </aside>
-
-      {/* MAIN COLUMN */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-10 md:py-9">{children}</main>
       </div>
     </div>
   );
+}
+
+function titleFromPath(pathname: string, tabs: string[], first: string): string {
+  const map: Record<string, string> = {
+    "/app": "Dashboard",
+    "/app/people": "People",
+    "/app/people/staff": "Staff Register",
+    "/app/people/learners": "Learners",
+    "/app/people/guardians": "Guardians & Parents",
+    "/app/people/exam-entries": "Exam Entries",
+    "/app/money": "Money",
+    "/app/reconcile": "Confirm",
+    "/app/levies": "Levies",
+    "/app/reports": "Fee Reports",
+    "/app/money/fees": "Fee Structures",
+    "/app/money/invoices": "Invoices & Statements",
+    "/app/academics": "Academics",
+    "/app/academics/curriculum": "Curriculum Setup",
+    "/app/people/admissions": "Admissions",
+    "/app/insights/compliance": "Compliance Center",
+    "/app/inbox": "Inbox (Approvals & Tasks)",
+    "/app/insights": "Insights",
+    "/app/settings": "Settings",
+    "/app/mark": "Attendance",
+    "/app/class": "My Class",
+    "/app/homework": "Homework",
+    "/app/messages": "Messages",
+    "/app/broadcast": "Broadcast",
+    "/app/approve": "Approvals",
+    "/app/directory": "Directory",
+    "/app/pay": "Pay Fees",
+    "/app/profile": "Profile",
+    "/app/insights/reports": "Report Builder",
+  };
+  if (map[pathname]) return map[pathname];
+  const seg = pathname.split("/").filter(Boolean)[1] ?? "";
+  const tab = tabs.find((t) => t.toLowerCase() === seg.toLowerCase());
+  return tab ?? (seg ? seg.charAt(0).toUpperCase() + seg.slice(1) : first);
 }

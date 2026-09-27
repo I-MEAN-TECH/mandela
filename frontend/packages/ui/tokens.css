@@ -1,75 +1,123 @@
 /* ============================================================
    MANDELA BRAND COLORS — single source of visual truth.
-   v4: the comp-derived system (scripts/design/*.html). Still ink
-   + paper sampled from mandela.png; chroma ONLY for meaning.
+   v6: the "green ledger" edition, extracted from the approved
+   reference dashboard (image-to-code pass, 2026-09-11):
 
-   FLAT COLOR RULE: this system uses NO gradients anywhere —
-   no gradient banners, buttons, borders, text or glows. Depth
-   comes from shadow and space alone. Don't add any.
+   · CANVAS — pale sage (#edf0e5) with a floating WHITE shell.
+   · PINE — the deep green ramp (#0b211b → #102e26 family) is
+     the voice of text, headings and the deep panel. Ink is
+     still a ramp; it simply now carries the reference's
+     green-black cast.
+   · LIME — the single bright accent (#8de24f family): the
+     active nav pill, the one vivid button per screen, chip
+     wells. Lime is ENERGY, never status.
+   · Depth is hairline borders + barely-there shadows — the
+     reference is a flat, calm, rounded world (16px cards).
 
-   Type system (from comps): Instrument Serif for display moments
-   (greetings, section statements), Inter for UI, Geist Mono for
-   micro-labels + tabular numerals. Every pairing AA minimum.
+   FLAT COLOR RULE: still NO gradients anywhere. Chroma is
+   meaning: ok/danger/warn for money & presence; lime for
+   navigation & the primary moment. Nothing else.
+
+   Type system: Poppins for everything display + UI headings
+   (geometric, rounded — the reference's signature), Inter for
+   dense UI text, Geist Mono for micro-labels + tabular
+   numerals. Every pairing AA minimum.
    ============================================================ */
 :root {
-  /* Ink — sampled from the mandela.png mark itself */
-  --ink-950: #020202;    /* the logo's black — 20.3:1 on white */
-  --ink-900: #171717;    /* body text, the deep panels */
-  --ink-800: #272727;    /* hover on ink-950 */
-  --ink-700: #383838;    /* 10.3:1 on white — text safe */
-  --ink-600: #575758;    /* 7.2:1 on white — muted text, AAA */
-  --ink-500: #686868;    /* 5.7:1 on white — small labels */
-  --ink-400: #868686;    /* 3.5:1 — large UI / icons only */
-  --ink-300: #a9a9a9;    /* placeholders, disabled */
-  --ink-200: #bababa;
+  /* Ink — the reference's green-black text cast. */
+  --ink-950: #0d1f1a;    /* headings, primary text — 17:1 on white */
+  --ink-900: #16302a;    /* body text */
+  --ink-800: #24443c;    /* hover */
+  --ink-700: #2f4a42;    /* 9.9:1 on white — text safe */
+  --ink-600: #5a716a;    /* 5.9:1 — muted text, AA */
+  --ink-500: #6d837b;    /* 4.6:1 — small labels */
+  --ink-400: #93a69f;    /* large UI / icons only */
+  --ink-300: #b8c6c0;    /* placeholders, disabled */
+  --ink-200: #cfdbd5;
 
-  /* Paper — the logo's white, cooled one step at a time */
-  --paper-50: #fbfbfc;   /* page background */
-  --paper-100: #f1f1f2;  /* quiet wells, hover fills */
-  --paper-200: #e8e8e8;  /* skeleton fill (sampled) */
-  --paper-300: #d8d8d8;  /* THE border (sampled) */
-  --paper-400: #c7c7c7;  /* strong border, dividers */
+  /* Paper — the sage room: sidebar tint, wells, hairlines. */
+  --paper-50: #f2f4ec;   /* sidebar / quiet panels — pale sage */
+  --paper-100: #ecefe3;  /* hover fills, meter tracks */
+  --paper-200: #e2e7d8;  /* skeleton fill, soft rules */
+  --paper-300: #dfe4d4;  /* THE hairline border */
+  --paper-400: #c8d0ba;  /* strong border, dividers */
 
-  /* Status — the ONLY chroma in the system, never decoration */
-  --ok: #198754;         /* 4.6:1 on white — paid / present / confirmed */
-  --ok-bg: #e6f4ed;
-  --danger: #c92a2a;     /* 5.9:1 on white — overdue / failed */
-  --danger-bg: #fdecec;
-  --warn: #a16207;       /* 4.9:1 on white — due soon / needs attention */
-  --warn-bg: #fefce8;
+  /* Lime — the reference's single bright accent. Navigation and
+     the vivid moment; never used for status (status has its own
+     chroma below). */
+  --lime-50: #f6fbee;
+  --lime-100: #eef8d9;   /* chip wells, quiet lime fills */
+  --lime-200: #e0f3b8;
+  --lime-300: #cdea9b;   /* THE active nav pill */
+  --lime-400: #aee26a;
+  --lime-500: #8de24f;   /* the vivid button — dark label on top */
+  --lime-600: #6fc336;   /* hover */
+  --lime-700: #55992a;
+  --accent: var(--lime-500);
+  --accent-hover: var(--lime-600);
+  --on-accent: #143d33;  /* pine label on lime, 8.5:1 */
+  --accent-soft: var(--lime-100);
+  /* Primary-tinted selection surface — derives from --primary (color-mix),
+     so a school rebrand retints EVERY selected state automatically. Pairs
+     with the primary outline: selected = primary frame + soft fill. */
+  --primary-soft: color-mix(in srgb, var(--primary) 12%, var(--surface));
+
+  /* Pine — the deep green family: deep panel, primary actions. */
+  --pine-50: #f0f7f4;
+  --pine-100: #ddeee7;
+  --pine-200: #c2e2d6;
+  --pine-300: #93cbb8;
+  --pine-400: #5aab92;
+  --pine-500: #378d73;
+  --pine-600: #246b56;
+  --pine-700: #1a5645;   /* primary buttons — white label 7.4:1 */
+  --pine-800: #143d33;
+  --pine-900: #102e26;
+  --pine-950: #0b211b;
+
+  /* Status — meaning chroma, never decoration. */
+  --ok: #1f9d5b;         /* 3.3:1 on white — pair w/ icon+text or bg pill */
+  --ok-bg: #e4f6ea;
+  --danger: #d64550;     /* 4.6:1 on white — overdue / failed */
+  --danger-bg: #fde8e8;
+  --warn: #b7791f;       /* 4.6:1 on white — due soon */
+  --warn-bg: #fdf3dc;
 
   /* Semantic */
-  --bg: var(--paper-50);
-  --surface: #ffffff;
+  --bg: #f7f9f2;                    /* the sage-washed canvas (main area) */
+  --ambient-panel: var(--paper-50); /* sidebar/chrome wash — school themes retint */
+  --surface: #ffffff;               /* cards + the floating shell */
   --border: var(--paper-300);
   --text: var(--ink-900);
   --text-muted: var(--ink-600);
-  --primary: var(--ink-950);        /* white label = 20.3:1, AAA */
-  --primary-hover: var(--ink-800);
+  --primary: var(--pine-700);       /* deep green action, white label */
+  --primary-hover: var(--pine-600);
   --on-primary: #ffffff;
-  --ring: var(--ink-900);
-  --brand-deep: var(--ink-950);     /* sidebar, headers, the login half */
-  --brand-deep-contrast: #f4f4f5;
-  --deep-line: #262628;             /* hairlines INSIDE deep panels */
+  --ring: var(--pine-500);
+  --brand-deep: #123b31;            /* the deep green panel (reference card) */
+  --brand-deep-contrast: #f2fbf5;
+  --deep-line: #235448;             /* hairlines INSIDE deep panels */
 
-  /* Shape + depth (shadow only — flat color, never gradients) */
-  --radius: 18px;        /* cards (comp: 18) */
-  --radius-sm: 12px;     /* inputs, inner rows */
-  --radius-lg: 24px;     /* hero panels */
+  /* Shape + depth — the reference is flat: hairlines, 16px cards,
+     barely-there shadows. */
+  --radius: 16px;        /* cards */
+  --radius-sm: 10px;     /* inputs, inner rows */
+  --radius-lg: 24px;     /* the white shell */
   --radius-pill: 999px;  /* buttons, chips, tabs */
-  --shadow-1: 0 1px 2px rgb(2 2 2 / .04), 0 14px 36px -22px rgb(2 2 2 / .12);
-  --shadow-2: 0 2px 6px rgb(2 2 2 / .06), 0 24px 56px -24px rgb(2 2 2 / .18);
-  --shadow-glow: 0 0 0 1px rgb(2 2 2 / .14), 0 8px 28px rgb(2 2 2 / .16);
+  --shadow-1: 0 1px 2px rgb(16 46 38 / .04), 0 12px 32px -24px rgb(16 46 38 / .14);
+  --shadow-2: 0 2px 6px rgb(16 46 38 / .06), 0 20px 44px -22px rgb(16 46 38 / .18);
+  --shadow-glow: 0 0 0 1px var(--lime-300), 0 8px 24px rgb(141 226 79 / .25);
 
-  /* Fluid type (375px → desktop). Comps: h1 40px, hero 76px, KPI 40px */
+  /* Fluid type. Display is now geometric sans (Poppins) at the
+     reference's calmer scale — 28px max page title. */
   --text-xs: clamp(.75rem, .72rem + .15vw, .8125rem);
   --text-sm: clamp(.875rem, .85rem + .18vw, .9375rem);
   --text-md: clamp(1rem, .96rem + .25vw, 1.125rem);
   --text-lg: clamp(1.25rem, 1.12rem + .7vw, 1.55rem);
   --text-xl: clamp(1.75rem, 1.45rem + 1.5vw, 2.5rem);
-  --text-num: clamp(1.875rem, 1.4rem + 2.2vw, 2.5rem);   /* KPI numerals — shrinks before it overflows */
-  --text-display: clamp(2rem, 1.35rem + 3vw, 2.875rem);  /* page h1 serif — 46px max */
-  --text-hero: clamp(2.75rem, 1.6rem + 5.4vw, 4.75rem);  /* landing hero — 76px max */
+  --text-num: clamp(1.3125rem, 1rem + 1.15vw, 1.625rem);   /* KPI numerals — cap 26px so "Ksh 1,234,567.89" keeps one line even 4-across */
+  --text-display: clamp(1.5rem, 1.3rem + .8vw, 1.75rem); /* page title — 28px max */
+  --text-hero: clamp(2.5rem, 1.6rem + 4.5vw, 4rem);      /* landing hero */
 
   /* Spacing scale */
   --s1: 4px; --s2: 8px; --s3: 12px; --s3h: 14px; --s4: 16px;
@@ -81,26 +129,46 @@
 }
 
 .dark {
-  --bg: #0c0c0d;
-  --surface: #131315;
-  --border: #262628;
-  --text: #f2f2f2;
-  --text-muted: #a9a9a9;
-  --primary: #ffffff;               /* black label = 19.3:1 on white, AAA */
-  --primary-hover: #d8d8d8;
-  --on-primary: #0c0c0d;
-  --ring: #d8d8d8;
-  --brand-deep: #000000;
-  --brand-deep-contrast: #e8e8e8;
-  --deep-line: #262628;
+  /* Dark = the same room at night: deep pine surfaces, mint text,
+     lime brightens to keep its energy. */
+  --bg: #0a1512;
+  --surface: #10241e;
+  --border: #1e3a32;
+  --text: #e9f5ee;
+  --text-muted: #9db5ab;
+  --primary: var(--lime-400);
+  --primary-hover: var(--lime-300);
+  --on-primary: #0b211b;
+  --ring: var(--pine-400);
+  --brand-deep: #0d1f1a;
+  --brand-deep-contrast: #e9f5ee;
+  --deep-line: #1e3a32;
+  --accent: var(--lime-400);
+  --accent-hover: var(--lime-300);
+  --on-accent: #0b211b;
+  --accent-soft: #1c2f18;
   --ok: #4ad295;
   --ok-bg: #0e2b1f;
   --danger: #f28b82;
   --danger-bg: #2e1414;
   --warn: #f4b860;
   --warn-bg: #2b2210;
-  --shadow-1: 0 1px 2px rgb(0 0 0 / .4), 0 8px 24px rgb(0 0 0 / .35);
-  --shadow-2: 0 2px 6px rgb(0 0 0 / .5), 0 24px 60px rgb(0 0 0 / .45);
-  --shadow-glow: 0 0 0 1px rgb(255 255 255 / .16), 0 8px 28px rgb(0 0 0 / .5);
+  --paper-50: #0e1e19;
+  --paper-100: #142922;
+  --paper-200: #1a332b;
+  --paper-300: #224037;
+  --paper-400: #2e5045;
+  --ink-950: #f2fbf5;
+  --ink-900: #e9f5ee;
+  --ink-800: #d5e6dd;
+  --ink-700: #c2d8cd;
+  --ink-600: #9db5ab;
+  --ink-500: #8aa398;
+  --ink-400: #6d887d;
+  --ink-300: #526b60;
+  --ink-200: #3d534a;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / .45), 0 8px 24px rgb(0 0 0 / .38);
+  --shadow-2: 0 2px 6px rgb(0 0 0 / .55), 0 24px 60px rgb(0 0 0 / .48);
+  --shadow-glow: 0 0 0 1px var(--lime-400), 0 8px 28px rgb(0 0 0 / .52);
   color-scheme: dark;
 }

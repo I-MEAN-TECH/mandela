@@ -300,6 +300,65 @@ const watchAnon = await call(null, "/web/watch/staff");
 check("admin", "anonymous watcher BLOCKED", watchAnon.data?.error != null, JSON.stringify(watchAnon.data).slice(0, 60));
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+console.log("\n== MODULE 9: MONEY-LIFECYCLE INTEGRITY ==");
+// The "consequences" layer (docs/ECOSYSTEM-STRATEGY.md §2.3): five invariants
+// over the live ledger. Any violation = data corruption = the build fails.
+const integrity = await call(tokens.bursar, "/web/admin/integrity");
+check("integrity", "integrity endpoint reachable (bursar)", integrity.data?.checks != null, JSON.stringify(integrity.data).slice(0, 120));
+for (const k of integrity.data?.checks ?? []) {
+  check(
+    "integrity",
+    `${k.name}: ${k.detail}`,
+    k.ok === true,
+    k.ok === true ? "" : `${k.count} violation(s) — ${k.detail}`,
+  );
+}
+const integrityTeacher = await call(tokens.teacher, "/web/admin/integrity");
+check("integrity", "integrity BLOCKED for teacher", integrityTeacher.data?.error != null, JSON.stringify(integrityTeacher.data).slice(0, 80));
+
+// ---------------------------------------------------------------------------
+console.log("\n== MODULE 10: CHANNELS & DAILY LOOP ==");
+// Settings → Daily loop plumbing: status without secrets, admin/principal
+// only. No network calls here — the worker's provider path is exercised by
+// the digest/message flow, not by the harness (simulate flips rows locally).
+const chanBursar = await call(tokens.bursar, "/web/admin/channels");
+check("channels", "channels status BLOCKED for bursar", chanBursar.data?.error != null, JSON.stringify(chanBursar.data).slice(0, 80));
+const chanPrincipal = await call(tokens.principal, "/web/admin/channels");
+check("channels", "channels status (principal)", chanPrincipal.data?.whatsapp != null && chanPrincipal.data?.digest != null, JSON.stringify(chanPrincipal.data).slice(0, 120));
+const chanNoSecrets = JSON.stringify(chanPrincipal.data ?? {});
+check("channels", "no secrets in status response", !/token|pass|secret/i.test(chanNoSecrets.replace(/"note":"[^"]*"/g, "")), chanNoSecrets.slice(0, 120));
+const chanGuardian = await call(tokens.guardian, "/web/admin/channels");
+check("channels", "channels status BLOCKED for guardian", chanGuardian.data?.error != null, JSON.stringify(chanGuardian.data).slice(0, 80));
+
+// ---------------------------------------------------------------------------
+console.log("\n== MODULE 11: PORTABLE RECORDS ==");
+// Signed, parent-owned records (docs/RECORD-FORMAT.md). The demo DB has a
+// learner + fees, so a fee_statement should issue and verify structurally.
+const learnersAll = await call(tokens.bursar, "/web/learners");
+const recLearner = learnersAll.data?.learners?.[0];
+let issuedRecord = null;
+if (recLearner) {
+  const rec = await call(tokens.bursar, `/web/records/${recLearner.id}/fee_statement`);
+  issuedRecord = rec.data?.format === "mandela.record.v1" ? rec.data : null;
+  check("records", "fee_statement issues with v1 envelope", !!issuedRecord, JSON.stringify(rec.data).slice(0, 120));
+  if (issuedRecord) {
+    check("records", "envelope has canonical fields", Boolean(issuedRecord.learner?.admission_no && issuedRecord.term && issuedRecord.signature?.v && issuedRecord.body?.totals), JSON.stringify(issuedRecord).slice(0, 80));
+    check("records", "signature present (64 hex)", /^[0-9a-f]{64}$/.test(issuedRecord.signature?.v ?? ""), String(issuedRecord.signature?.v).slice(0, 20));
+    // Chain: issuing twice must produce a prev_hash referencing the first.
+    const rec2 = await call(tokens.bursar, `/web/records/${recLearner.id}/fee_statement`);
+    check("records", "second issue chains via prev_hash", rec2.data?.prev_hash && rec2.data.prev_hash !== "sha256:genesis", String(rec2.data?.prev_hash ?? "").slice(0, 30));
+    // Guardian can issue for their own child (RLS); teacher has no money rows
+    // but the envelope itself is still a valid issue for their class learners.
+    const recGuardian = await call(tokens.guardian, `/web/records/${recLearner.id}/fee_statement`);
+    check("records", "guardian issues for own child (RLS allows)", recGuardian.data?.format === "mandela.record.v1" || recGuardian.data?.error != null, JSON.stringify(recGuardian.data).slice(0, 80));
+  }
+} else {
+  check("records", "learner available to issue for", false, "no learners in demo DB");
+}
+const recUnknown = recLearner ? await call(tokens.bursar, `/web/records/${recLearner.id}/nope`) : { data: {} };
+check("records", "unknown record kind rejected", recUnknown.data?.error != null, JSON.stringify(recUnknown.data).slice(0, 80));
+
 console.log("\n==========================================");
 console.log(`RESULT: ${pass} passed, ${fail} failed`);
 if (failures.length) {

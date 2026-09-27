@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button } from "@mandela/ui";
 import type { RosterRow } from "@/lib/api";
+import { queueOfflineOp } from "@/components/SyncBanner";
 
 const CHOICES = ["present", "late", "absent", "excused"] as const;
 
@@ -26,7 +27,15 @@ export function MarkButtons({
 
   function saveAll() {
     start(async () => {
-      await action(Object.entries(marks).map(([learnerId, mark]) => ({ learnerId, mark })));
+      const payload = Object.entries(marks).map(([learnerId, mark]) => ({ learnerId, mark }));
+      if (!navigator.onLine) {
+        // Flank #5: attendance is allowlisted for the offline outbox. The
+        // SyncBanner shows the queued state and flushes when back online.
+        queueOfflineOp("attendance.mark", { marks: payload });
+        setSaved(true);
+        return;
+      }
+      await action(payload);
       setSaved(true);
     });
   }
@@ -90,7 +99,7 @@ export function MarkButtons({
         </Button>
         {saved && !pending ? (
           <span className="text-sm font-semibold text-ok" role="status">
-            Saved ✓
+            {typeof navigator !== "undefined" && !navigator.onLine ? "Queued — syncs when back online" : "Saved"}
           </span>
         ) : null}
       </div>

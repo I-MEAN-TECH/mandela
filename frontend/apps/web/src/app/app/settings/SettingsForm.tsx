@@ -53,7 +53,7 @@ export function SettingsForm({
         modules: modules.filter((m) => m.title && m.body),
       });
       if (res.ok) {
-        setMsg("Saved — every screen updates ✓");
+        setMsg("Saved — every screen updates — done");
         router.refresh();
       } else {
         setMsg(res.error ?? "Failed to save");
@@ -141,21 +141,25 @@ export function SettingsForm({
           {modules.map((m, i) => (
             <div key={i} className="grid gap-2 rounded-sm border border-paper-200 p-s3">
               <span className="font-mono text-[11px] text-ink-400">{String(i + 1).padStart(2, "0")}</span>
-              <input
-                value={m.title}
-                onChange={(e) => setModules((arr) => arr.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
-                placeholder="Title"
-                disabled={!canEdit}
-                className="h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:bg-paper-100"
-              />
-              <textarea
-                value={m.body}
-                onChange={(e) => setModules((arr) => arr.map((x, j) => (j === i ? { ...x, body: e.target.value } : x)))}
-                placeholder="What it does"
-                rows={2}
-                disabled={!canEdit}
-                className="w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:bg-paper-100"
-              />
+              <label className="block text-xs font-semibold text-muted">
+                Card title
+                <input
+                  value={m.title}
+                  onChange={(e) => setModules((arr) => arr.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
+                  disabled={!canEdit}
+                  className="mt-1 h-11 w-full rounded-sm border border-border bg-surface px-3 text-sm font-semibold outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:bg-paper-100"
+                />
+              </label>
+              <label className="block text-xs font-semibold text-muted">
+                Card body
+                <textarea
+                  value={m.body}
+                  onChange={(e) => setModules((arr) => arr.map((x, j) => (j === i ? { ...x, body: e.target.value } : x)))}
+                  rows={2}
+                  disabled={!canEdit}
+                  className="mt-1 w-full rounded-sm border border-border bg-surface px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:bg-paper-100"
+                />
+              </label>
             </div>
           ))}
         </div>
@@ -167,7 +171,7 @@ export function SettingsForm({
             {pending ? "Saving…" : "Save school settings"}
           </Button>
           {msg ? (
-            <span className={`text-sm font-semibold ${msg.endsWith("✓") ? "text-ok" : "text-danger"}`} role="status">
+            <span className={`text-sm font-semibold ${msg.endsWith(" — done") ? "text-ok" : "text-danger"}`} role="status">
               {msg}
             </span>
           ) : null}

@@ -3,44 +3,70 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@mandela/ui";
+import { ErrorSummary, Field, useForm, inputCls } from "@/components/Form";
 
 export function LoginTabs() {
   const router = useRouter();
   const [tab, setTab] = useState<"staff" | "guardian">("staff");
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [nudge, setNudge] = useState(false);
 
-  async function submit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setPending(true);
-    setError(null);
-    const fd = new FormData(e.currentTarget);
-    try {
-      const res = await fetch("/api/auth", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(
-          tab === "staff"
-            ? { kind: "staff", email: String(fd.get("email") ?? "") }
-            : { kind: "guardian", phone: String(fd.get("phone") ?? "") },
-        ),
-      });
-      if (res.ok) {
-        router.push("/app");
-        router.refresh();
-      } else {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        setError(body.error ?? "Sign-in failed");
+  const form = useForm({
+    fields: {
+      email: {
+        label: "School email",
+        validate: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) ? null : "must look like name@school — check for typos"),
+      },
+      password: {
+        label: "Password",
+        validate: () => null, // legacy accounts may not have one yet — the server decides
+      },
+      phone: {
+        label: "Phone number",
+        validate: (v) => {
+          const digits = v.replace(/\D/g, "");
+          if (!/^(?:254|\+254|0)?(7\d{8}|1\d{8})$/.test(digits)) {
+            return "must be a Kenyan number, e.g. 0733 000 001 or 254733000001";
+          }
+          return null;
+        },
+      },
+    },
+    onSubmit: async (values) => {
+      setPending(true);
+      setServerError(null);
+      try {
+        const res = await fetch("/api/auth", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(
+            tab === "staff"
+              ? { kind: "staff", email: (values.email ?? "").trim(), password: (values.password ?? "") || undefined }
+              : { kind: "guardian", phone: (values.phone ?? "").trim() },
+          ),
+        });
+        const body = (await res.json().catch(() => ({}))) as { error?: string; needsPassword?: boolean };
+        if (res.ok) {
+          if (body.needsPassword) {
+            // Signed in on the legacy path — invite the desk to set a real
+            // password before their next sign-in (it becomes mandatory then).
+            setNudge(true);
+            setPending(false);
+            return;
+          }
+          router.push("/app");
+          router.refresh();
+          return;
+        }
+        setServerError(body.error ?? "Sign-in failed");
+      } catch {
+        setServerError("Could not reach the school system");
+      } finally {
+        setPending(false);
       }
-    } catch {
-      setError("Could not reach the school system");
-    } finally {
-      setPending(false);
-    }
-  }
-
-  const inputCls =
-    "h-12 w-full rounded-sm border border-border bg-surface px-3.5 text-[15px] outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    },
+  });
 
   return (
     <div className="mt-s6">
@@ -52,10 +78,10 @@ export function LoginTabs() {
             role="tab"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className={`h-11 flex-1 rounded-pill text-sm transition-colors ${
+            className={`h-11 flex-1 rounded-pill border-2 text-sm transition-colors ${
               tab === t
-                ? "bg-surface font-semibold text-primary shadow-1"
-                : "font-medium text-muted hover:text-text"
+                ? "border-primary bg-surface font-semibold text-primary shadow-1"
+                : "border-transparent font-medium text-muted hover:text-text"
             }`}
           >
             {t === "staff" ? "I'm staff" : "I'm a guardian"}
@@ -63,44 +89,61 @@ export function LoginTabs() {
         ))}
       </div>
 
-      <form onSubmit={submit} className="mt-s5 space-y-s4">
+      <form onSubmit={form.handleSubmit} noValidate className="mt-s5 space-y-s4">
+        <ErrorSummary errors={form.summary} />
+
         {tab === "staff" ? (
-          <label className="block text-[13px] font-semibold" htmlFor="email">
-            School email
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              placeholder="you@mandela.school"
-              className={`mt-1.5 ${inputCls}`}
-            />
-          </label>
+          <>
+            <Field name="email" label="School email" error={form.errorFor("email")}>
+              <input
+                {...form.bind("email")}
+                type="email"
+                autoComplete="email"
+                className={`mt-1.5 ${inputCls(Boolean(form.errorFor("email")))}`}
+              />
+            </Field>
+            <Field name="password" label="Password" hint="Leave empty only if your account has no password yet" error={form.errorFor("password")}>
+              <input
+                {...form.bind("password")}
+                type="password"
+                autoComplete="current-password"
+                className={`mt-1.5 ${inputCls(Boolean(form.errorFor("password")))}`}
+              />
+            </Field>
+          </>
         ) : (
-          <label className="block text-[13px] font-semibold" htmlFor="phone">
-            Phone number
+          <Field name="phone" label="Phone number" hint="07…, 01… or +2547… — any format works" error={form.errorFor("phone")}>
             <input
-              id="phone"
-              name="phone"
+              {...form.bind("phone")}
               type="tel"
-              required
               inputMode="tel"
               autoComplete="tel"
-              placeholder="0733 000 001"
-              className={`mt-1.5 ${inputCls}`}
+              className={`mt-1.5 ${inputCls(Boolean(form.errorFor("phone")))}`}
             />
-          </label>
+          </Field>
         )}
 
         <Button variant="primary" size="lg" type="submit" className="w-full" loading={pending}>
           {pending ? "Signing in…" : "Continue"}
         </Button>
 
-        {error ? (
+        {serverError ? (
           <p className="text-sm font-semibold text-danger" role="alert">
-            {error}
+            {serverError}
           </p>
+        ) : null}
+
+        {nudge ? (
+          <div className="rounded-sm border border-warn bg-warn-bg px-4 py-3 text-[13px] leading-relaxed text-warn" role="status">
+            <p className="font-semibold">You're in — one step left.</p>
+            <p className="mt-1 text-ink-800">
+              This account has no password yet. Open your account menu (top right) and choose <strong>Set password</strong> —
+              next sign-in will require it.
+            </p>
+            <Button variant="primary" size="lg" className="mt-3 w-full" onClick={() => { router.push("/app"); router.refresh(); }}>
+              Enter the school
+            </Button>
+          </div>
         ) : null}
       </form>
     </div>

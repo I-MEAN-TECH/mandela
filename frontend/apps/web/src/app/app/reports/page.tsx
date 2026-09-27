@@ -1,6 +1,7 @@
 import { requireSession, requireBootstrap, getCollections, getPayments } from "@/lib/api";
 import { Card, CardHead, DataTable, EmptyState, KpiCard, Money, SerifHeader } from "@mandela/ui";
 import { redirect } from "next/navigation";
+import { noun } from "@/lib/plural";
 import { AppLiveBar } from "../LiveBar";
 
 /** Reports — the bursar's term report: billed vs collected, print-ready. */
@@ -17,15 +18,15 @@ export default async function ReportsPage() {
   return (
     <div>
       <SerifHeader
-        crumb={`${boot.school.name} · Money`}
-        title={<>The term, <em>in numbers.</em></>}
+        crumb={`${boot.school.name} / Money`}
+        title={<>The term, in numbers.</>}
         sub="Billed vs collected by class — the report you can hand to the board."
         actions={<AppLiveBar />}
       />
 
       <div className="mt-s7 grid gap-s3h">
         <div className="grid gap-s3h sm:grid-cols-2 xl:grid-cols-3">
-          <KpiCard ink label="Billed this term" value={<Money cents={billed} />} note={`${collections.collections.length} classes`} />
+          <KpiCard ink label="Billed this term" value={<Money cents={billed} />} note={`${collections.collections.length} ${noun(collections.collections.length, "class", "classes")}`} />
           <KpiCard label="Collected" tone="ok" value={<Money cents={paid} />} note={`${rate}% of billed`} />
           <KpiCard label="Gap" tone={billed - paid > 0 ? "danger" : "ok"} value={<Money cents={Math.max(billed - paid, 0)} />} note="still with guardians" />
         </div>

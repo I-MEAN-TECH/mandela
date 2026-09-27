@@ -8,7 +8,7 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
       <div className="max-w-md">
         <p className="microlabel">Something broke</p>
         <h1 className="display mt-s3 text-[32px] text-ink-950">
-          The page hit a <em>snag.</em>
+          The page hit a snag.
         </h1>
         <p className="mt-s3 text-sm leading-relaxed text-muted">
           Nothing was lost — your data is safe in the school database. Try again, and if it keeps

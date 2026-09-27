@@ -1,7 +1,10 @@
-import { requireSession, requireBootstrap, getClasses, getRoster } from "@/lib/api";
+import { requireSession, requireBootstrap, getClasses, getRoster, getLearningAreas, getAssessments, getMySectionFull } from "@/lib/api";
 import { Card, CardHead, EmptyState, KpiCard, SerifHeader } from "@mandela/ui";
 import { redirect } from "next/navigation";
+import { noun } from "@/lib/plural";
 import { AppLiveBar } from "../LiveBar";
+import { AssessmentCapture } from "./AssessmentCapture";
+import { MySectionTab } from "./MySectionTab";
 
 /** Class — the teacher's own class today: roster + marks at a glance. */
 export default async function ClassPage() {
@@ -11,6 +14,11 @@ export default async function ClassPage() {
   const classes = await getClasses();
   const first = classes.classes[0];
   const roster = first ? (await getRoster(first.id)).roster : [];
+  const [areas, assessments, section] = first
+    ? await Promise.all([getLearningAreas(first.id), getAssessments(first.id), getMySectionFull()])
+    : [{ areas: [] }, { assessments: [] }, null];
+  // 43a: the patron tab appears only for staff who head a section.
+  const mySection = section && !("error" in section) && section && "sections" in section && section.sections.length > 0 ? section : null;
 
   const present = roster.filter((r) => r.mark === "present").length;
   const absent = roster.filter((r) => r.mark === "absent").length;
@@ -20,8 +28,8 @@ export default async function ClassPage() {
   return (
     <div>
       <SerifHeader
-        crumb={`${boot.school.name} · Classroom`}
-        title={<>My class, <em>right now.</em></>}
+        crumb={`${boot.school.name} / Classroom`}
+        title={<>My class, right now.</>}
         sub={first ? `${first.name} — today's register, straight from the DB.` : "Your class appears here once the office assigns you one."}
         actions={<AppLiveBar />}
       />
@@ -31,13 +39,13 @@ export default async function ClassPage() {
           <KpiCard ink label="Roll call" value={roster.length} note={first?.name ?? "no class"} />
           <KpiCard label="Present" tone="ok" value={present} note="marked present today" />
           <KpiCard label="Absent" tone="danger" value={absent} note={late ? `${late} late` : "no lates"} />
-          <KpiCard label="Unmarked" value={unmarked} note={unmarked > 0 ? "waiting for you" : "register complete ✓"} />
+          <KpiCard label="Unmarked" value={unmarked} note={unmarked > 0 ? "waiting for you" : "register complete — done"} />
         </div>
 
         <Card>
           <CardHead
             title={first?.name ?? "Roster"}
-            sub={first ? `${first.learners} learners · ${new Date().toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })}` : undefined}
+            sub={first ? `${first.learners} ${noun(Number(first.learners), "learner")} · ${new Date().toLocaleDateString("en-KE", { weekday: "long", day: "numeric", month: "long" })}` : undefined}
           />
           {roster.length === 0 ? (
             <EmptyState title="No learners yet" body="Enrol learners into this class and they appear here instantly." />
@@ -65,7 +73,44 @@ export default async function ClassPage() {
             </div>
           )}
         </Card>
+
+        {mySection ? (
+          <div>
+            <p className="mb-s3 font-display text-[16px] font-semibold text-ink-950">My section · patron duties</p>
+            <MySectionTab data={mySection} />
+          </div>
+        ) : null}
+
+        <Card>
+          <CardHead
+            title="Assessment"
+            sub="CBC day-to-day recording — pick a learning area, tap a level per learner"
+          />
+          {roster.length === 0 ? (
+            <EmptyState title="Nothing to assess yet" body="Learners appear here once the class has a roster." />
+          ) : (
+            <AssessmentCapture
+              classId={first!.id}
+              className={first!.name}
+              learners={learnersFromRoster(roster)}
+              areas={areas.areas}
+              existing={assessments.assessments}
+            />
+          )}
+        </Card>
       </div>
     </div>
   );
+}
+
+/** Roster rows carry admission numbers; assessment needs learner ids. */
+function learnersFromRoster(roster: { id: string; name: string; admission_no: string; mark: string | null }[]) {
+  return roster.map((r) => ({
+    id: r.id,
+    admission_no: r.admission_no,
+    name: r.name,
+    class: null,
+    status: "active",
+    gender: null,
+  }));
 }

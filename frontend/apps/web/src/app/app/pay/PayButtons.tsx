@@ -18,7 +18,7 @@ export function PayButtons({
   function pay(amountCents: number) {
     start(async () => {
       const res = await action({ learnerId, amountCents, method: "mpesa" });
-      setMsg(res.ok ? "Payment received — receipt on its way ✓" : (res.error ?? "Payment failed"));
+      setMsg(res.ok ? "Payment received — receipt on its way — done" : (res.error ?? "Payment failed"));
     });
   }
 
@@ -31,7 +31,7 @@ export function PayButtons({
         Pay half
       </Button>
       {msg ? (
-        <span className={`text-sm ${msg.endsWith("✓") ? "text-ok" : "text-danger"}`} role="status">
+        <span className={`text-sm ${msg.endsWith(" — done") ? "text-ok" : "text-danger"}`} role="status">
           {msg}
         </span>
       ) : null}

@@ -5,6 +5,8 @@ import { StatusExceptionFilter } from "./status-exception.filter.js";
 import { config, useEmbeddedPostgres } from "./config.js";
 import { startEmbeddedPostgres, stopEmbeddedPostgres } from "./embedded-postgres.js";
 import { closeAllPools, getControlPool } from "./db/pool.js";
+import { startTalkWorker, stopTalkWorker } from "./talk/worker.js";
+import { startRollupWorker, stopRollupWorker } from "./web/rollupWorker.js";
 
 async function bootstrap() {
   if (useEmbeddedPostgres) {
@@ -20,6 +22,8 @@ async function bootstrap() {
   });
   app.useGlobalFilters(new StatusExceptionFilter());
   app.enableShutdownHooks();
+  startTalkWorker();
+  startRollupWorker();
   await app.listen(config.PORT);
   console.log(`[api] Mandela API ready on http://localhost:${config.PORT}`);
 }
@@ -30,6 +34,8 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   console.log(`[api] ${signal} received — shutting down`);
   try {
+    stopTalkWorker();
+    stopRollupWorker();
     await stopEmbeddedPostgres();
     await closeAllPools();
   } finally {

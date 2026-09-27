@@ -1,53 +1,59 @@
-# MANDELA Brand Colors — Ink & Paper, the logo's own system
+# MANDELA Brand — the Green Ledger
 
-> The logo (mandela.png) is monochrome ink on white. The design system is
-> therefore **ink + paper**, with chroma reserved strictly for meaning.
-> Every ramp value below is SAMPLED from the logo's own pixels.
+> v6 (2026-09-11). The visual system is extracted from the approved reference
+> dashboard (image-to-code pass): a **pale-sage room**, a **white rounded
+> shell**, **deep pine** as the voice of text and action, and **lime** as the
+> single bright accent. The logo mark still inherits `currentColor`, so it
+> stays in harmony on every surface it touches.
 
 ## The palette and why
 
 | Token | Hex | Role | Meaning |
 |---|---|---|---|
-| **Ink 950** | `#020202` | `--primary`, `--brand-deep`: buttons, sidebar, login | The logo's black. The primary action is the logo's own ink — the most confident thing on screen, 20.3:1 with a white label (AAA). |
-| **Ink 900/700** | `#171717` / `#383838` | body text, headings, links on light | 10.3:1+ on white — AAA body text. The logo's mark never shouts; neither does its type. |
-| **Ink 600/500** | `#575758` / `#686868` | muted text, labels | 5.7:1+ on white — AA small text. |
-| **Ink 400/300** | `#868686` / `#a9a9a9` | icons, placeholders, disabled | 3.5:1 — large UI/icons only, never small text. |
-| **Paper 50–400** | `#fbfbfc` → `#c7c7c7` | backgrounds, wells, borders | The logo's white and its anti-alias grays. `--border` = `#d8d8d8` (sampled). |
-| **Status ok** | `#198754` | paid / present / confirmed | The only green in the system, and only where money or presence is real. Paired with icon + text (colorblind-safe). |
-| **Status warn** | `#a16207` | due soon / needs attention | Amber says "look", never "fail". |
-| **Status danger** | `#c92a2a` | overdue / failed / act now | Guardian mornings are stressful: red means "act now", never "you failed". Always paired with icon + text. |
+| **Canvas `--bg`** | `#f7f9f2` | the sage-washed page behind the shell | The room, not a surface — content lives on white cards. |
+| **Paper 50–400** | `#f2f4ec` → `#c8d0ba` | sidebar tint, wells, hairlines | `--border` = `#dfe4d4` — the reference's sage hairline. |
+| **Pine 700** | `#1a5645` | `--primary`: buttons, the confident action | White label 7.4:1 (AAA). Deep green = trust + growth; it is the logo's new host color. |
+| **Pine 900/950** | `#102e26` / `#0b211b` | headings, body text on light | Green-black ink — the reference's text cast. |
+| **Lime 500** | `#8de24f` | `--accent`: the ONE vivid moment per screen — active nav pill, the bright action, chip wells | Lime is **energy, never status**. Dark pine label on lime (8.5:1, AAA). Never for paid/due/fail. |
+| **Deep panel `--brand-deep`** | `#123b31` | the one deep-green anchor surface per screen (governance band, logo tile) | With `--brand-deep-contrast` `#f2fbf5`. |
+| **Status ok** | `#1f9d5b` | paid / present / confirmed | The only green allowed to mean money. Paired with icon + text. |
+| **Status warn** | `#b7791f` | due soon / needs attention | Amber says "look", never "fail". |
+| **Status danger** | `#d64550` | overdue / failed / act now | Red means "act now" — always paired with icon + text. |
 
-## Usage rules (enforced by the design system)
+## Usage rules
 
-1. **One primary action per screen** — `Button variant="primary"` is ink-950,
-   the logo's black. Everything else is quiet secondary/ghost.
-2. **Chroma is a status, not a decoration.** Green/amber/red appear ONLY in
-   `StatusPill`, money states and attendance marks. No colored buttons,
-   banners, or accents — the brand is monochrome, so those colors always
-   mean something.
-3. **NO GRADIENTS — anywhere.** Depth comes from shadow and space alone.
-   No gradient banners, buttons, borders, text or glows. This is a hard rule.
-4. **White text sits on ink-950/900 (AAA) and on ok/danger 600-level (AA+).**
-   Never on ink-400 or paper ramps.
-5. **Dark mode inverts the same ink/paper axis** (primary becomes white ink,
-   `on-primary` becomes near-black) — both themes stay AA/AAA; the tokens
-   encode this, don't override.
-6. Per-school theming may override tokens in `school_settings` (DB-driven),
-   but the ink/paper harmony is the product's voice.
+1. **One primary action per screen** — `Button variant="primary"` is pine.
+   The vivid moment (`variant="vivid"`, lime) appears **at most once** per
+   screen, and never competes with a pine primary on the same view.
+2. **Lime is navigation + energy, never status.** Nav pill, chip wells,
+   meters, the single vivid action. Status keeps its own chroma
+   (ok/warn/danger) and never borrows lime.
+3. **NO GRADIENTS — anywhere.** Depth = hairline borders, 16px rounded
+   corners, barely-there shadows (`--shadow-1/2`), and space. The reference
+   is a flat, calm world; texture overlays are gone.
+4. **The white shell** — the app renders inside a `rounded-[24px]` white
+   container floating on the sage canvas (see AppShell). Cards are white on
+   white, separated by hairlines and shadows — never gray-on-gray boxes.
+5. **Shape:** cards 16px, inner rows/inputs 10px, buttons/chips 12px,
+   status pills 8px. Rounded, but tighter than pill-everything.
+6. **Dark mode** is the same room at night: deep pine surfaces, mint text,
+   lime brightened. Tokens encode both; don't override per-screen.
+7. Per-school theming may override tokens in `school_settings`, but the
+   sage/pine/lime harmony is the product's voice.
 
 ## Where the tokens live
 
 - `frontend/packages/ui/tokens.css` — CSS variables, light + dark (source of truth)
 - `frontend/packages/ui/src/theme.ts` — TS mirror for NativeWind/Expo
-- `frontend/packages/ui/tailwind.preset.ts` — Tailwind v4 utilities (`bg-primary`, `text-on-primary`, `bg-brand-deep`…)
+- `frontend/packages/ui/tailwind.preset.ts` — Tailwind v4 utilities
+- `globals.css` bridges everything into Tailwind's `@theme inline`
 
-## Type + motion (the rest of the feel)
+## Type + motion
 
-- **Type (v4, from the design comps in `scripts/design/`):** Instrument Serif
-  for display moments (greetings, page statements, the quote band — italic
-  `em` is the signature emphasis), Inter for UI, Geist Mono for micro-labels
-  (`.microlabel`) and all big numerals (`.numeral`, always tabular).
-- **Shape:** cards 18px radius, inputs 12px, buttons/chips/pills 999px.
-- **Motion:** one vocabulary in `src/motion.ts`; the signature ease is
-  `cubic-bezier(.22,1,.36,1)`; nothing over 400ms except hero moments; the
-  landing/dashboard use the `.rise` stagger (reduced-motion aware).
+- **Type:** Poppins for display + card headings (`.display`, `font-display`)
+  — geometric, rounded, the reference's voice. Inter for dense UI text.
+  Geist Mono for micro-labels (`.microlabel`) and tabular numerals (`.numeral`).
+- **Shape of a page:** Poppins title (28px cap) → quiet sub → cards.
+- **Motion:** one vocabulary; the signature ease is
+  `cubic-bezier(.22,1,.36,1)`; the `.rise` stagger on dashboards
+  (reduced-motion aware).

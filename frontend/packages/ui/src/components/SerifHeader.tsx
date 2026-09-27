@@ -1,8 +1,9 @@
 import { cn } from "../cn";
 
 /**
- * SerifHeader — the comp's page opening: mono crumb eyebrow, serif display
- * headline with italic `<em>` emphasis, optional right-side actions.
+ * PageHeader (kept name SerifHeader for callers) — the reference's page
+ * opening: Poppins display headline with pine `<em>` emphasis, quiet sub,
+ * optional right-side actions.
  */
 export function SerifHeader({
   crumb,
@@ -20,7 +21,9 @@ export function SerifHeader({
   return (
     <div className={cn("flex flex-wrap items-end justify-between gap-s4", className)}>
       <div className="min-w-0">
-        {crumb ? <p className="microlabel">{crumb}</p> : null}
+        {/* Mono crumb ONLY when callers pass real navigation data (e.g. "People > Staff").
+          Plain school-name chrome was the AI-tell the design audit called out. */
+        }{crumb ? <p className="microlabel">{crumb}</p> : null}
         <h1 className="display mt-s2 text-display text-ink-950">{title}</h1>
         {sub ? <p className="mt-2.5 max-w-2xl text-[13.5px] leading-relaxed text-muted">{sub}</p> : null}
       </div>

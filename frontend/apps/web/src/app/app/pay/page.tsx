@@ -9,7 +9,7 @@ export default async function PayPage() {
   if (me.principal.kind !== "guardian") {
     return (
       <div>
-        <SerifHeader crumb="Money · Pay" title={<>Families pay <em>here.</em></>} />
+        <SerifHeader crumb="Money / Pay" title={<>Families pay here.</>} />
         <div className="mt-s7">
           <EmptyState title="Staff record payments from Money" body="The bursar's Money screen handles receipts, records and the ledger." />
         </div>
@@ -21,8 +21,8 @@ export default async function PayPage() {
   return (
     <div>
       <SerifHeader
-        crumb={`${boot.school.name} · Pay`}
-        title={<>What do I owe, <em>and when?</em></>}
+        crumb={`${boot.school.name} / Pay`}
+        title={<>What do I owe, and when?</>}
         sub="Pay the full balance or half now — receipts land on your phone instantly."
       />
 

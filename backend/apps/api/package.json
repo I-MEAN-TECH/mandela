@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "bootstrap:cluster": "tsx src/scripts/bootstrap-cluster.ts",
+    "migrate": "tsx src/scripts/apply-migrations.ts",
     "provision:school": "tsx src/scripts/provision-school.ts",
     "seed:demo": "tsx src/scripts/seed-demo.ts",
     "seed:branding": "tsx src/scripts/seed-branding.ts",
@@ -21,6 +22,7 @@
     "embedded-postgres": "^17.4.0-beta.15",
     "fast-glob": "^3.3.2",
     "nanoid": "^5.0.7",
+    "pdfkit": "0.17.1",
     "pg": "^8.13.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
@@ -29,6 +31,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/node": "^22.10.0",
+    "@types/pdfkit": "0.13.4",
     "@types/pg": "^8.11.10",
     "tsx": "^4.19.2",
     "typescript": "^5.7.0"

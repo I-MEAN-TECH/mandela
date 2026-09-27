@@ -1,6 +1,8 @@
 import { requireSession, requireBootstrap, getInsights, type InsightsData } from "@/lib/api";
 import { Card, CardHead, KpiCard, Meter, Money, DataTable, EmptyState, SerifHeader } from "@mandela/ui";
 import { redirect } from "next/navigation";
+import { noun } from "@/lib/plural";
+import { AiDrafts } from "./AiDrafts";
 
 /** Insights — the school's health on one screen, every number from the DB. */
 export default async function InsightsPage() {
@@ -26,8 +28,8 @@ export default async function InsightsPage() {
   return (
     <div>
       <SerifHeader
-        crumb="School · This term"
-        title={<>Is the school <em>healthy?</em></>}
+        crumb="School / This term"
+        title={<>Is the school healthy?</>}
         sub="People, money and mood — the term's vital signs in one view."
       />
 
@@ -35,7 +37,7 @@ export default async function InsightsPage() {
         <div className="grid gap-s3h sm:grid-cols-2 xl:grid-cols-4">
           <KpiCard ink label="Active learners" value={data.learners.active} note={`${data.learners.boarding} boarding`} />
           <KpiCard label="Collection rate" tone={rate >= 80 ? "ok" : rate >= 50 ? "warn" : "danger"} value={<>{rate}<span className="text-xl font-medium text-ink-500">%</span></>} note="of billed this term" meter={{ value: rate, ok: rate >= 80 }} />
-          <KpiCard label="Parents on WhatsApp" value={<>{waRate}<span className="text-xl font-medium text-ink-500">%</span></>} note={`${data.guardians.total} guardians connected`} />
+          <KpiCard label="Parents on WhatsApp" value={<>{waRate}<span className="text-xl font-medium text-ink-500">%</span></>} note={`${data.guardians.total} ${noun(Number(data.guardians.total), "guardian")} connected`} />
           <KpiCard label="Money" tone="neutral" value={<Money cents={totalPaid} />} note={`collected of ${new Intl.NumberFormat("en-KE", { maximumFractionDigits: 0 }).format(totalBilled / 100)} billed`} />
         </div>
 
@@ -83,6 +85,8 @@ export default async function InsightsPage() {
             </>
           )}
         </Card>
+
+        <AiDrafts />
       </div>
     </div>
   );

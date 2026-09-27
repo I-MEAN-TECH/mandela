@@ -21,7 +21,19 @@
 
 import { createContext, useContext } from "react";
 
-export type Role = "parent" | "teacher" | "bursar" | "principal" | "admin" | "driver";
+export type Role =
+  | "parent"
+  | "teacher"
+  | "bursar"
+  | "principal"
+  | "admin"
+  | "driver"
+  | "counter"
+  | "dorm_parent"
+  | "janitor"
+  | "librarian"
+  | "patron"
+  | "hod";
 
 /** ≤5 targets per role. Adding one = product decision, not a dev task. */
 export const roleNav: Record<Role, readonly string[]> = {
@@ -30,7 +42,14 @@ export const roleNav: Record<Role, readonly string[]> = {
   bursar: ["Today", "Collect", "Reconcile", "Levies", "Reports"],
   principal: ["Today", "Approve", "Insights", "Broadcast", "Directory"],
   admin: ["Today", "People", "Money", "Insights", "Settings"],
-  driver: ["Route", "Manifest", "Done"],
+  driver: ["Route", "Manifest", "Done", "Messages"],
+  counter: ["Today", "Visitors", "Inquiries", "Directory", "Calendar"],
+  // Phase 6 (§6.7–6.11) — ≤5 targets each, same 3-tap law.
+  dorm_parent: ["Today", "Rollcall", "Exeats", "Laundry", "My dorm"],
+  janitor: ["Today", "Repairs", "Supplies", "My zones"],
+  librarian: ["Today", "Issue/Return", "Catalogue", "Overdue"],
+  patron: ["Today", "Sections", "Points", "Events"],
+  hod: ["Today", "Department", "Marks", "Coverage"],
 };
 
 /** What the home screen must answer in plain words (the screen's title). */
@@ -41,6 +60,12 @@ export const rolePrimeQuestion: Record<Role, string> = {
   principal: "Is the school healthy — money, people, mood?",
   admin: "Is the term running — and what needs me?",
   driver: "Who boards where, and who's left?",
+  counter: "Who's here, who's calling, who's enrolling?",
+  dorm_parent: "Who's in, who's out tonight?",
+  janitor: "What's broken, and what got fixed this week?",
+  librarian: "What's out, what's back, who's overdue?",
+  patron: "Which house is ahead, what's running this week?",
+  hod: "Is my department covered and marked?",
 };
 
 export interface RoleShellContextValue {

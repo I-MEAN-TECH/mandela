@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@mandela/ui";
+import { ErrorSummary, Field, useForm, inputCls } from "@/components/Form";
 import type { ClassRow } from "@/lib/api";
 
 export function HomeworkForm({
@@ -11,75 +12,95 @@ export function HomeworkForm({
   classes: ClassRow[];
   action: (input: { classId: number; subject: string; title: string; body: string; dueOn?: string }) => Promise<{ ok: boolean; error?: string }>;
 }) {
-  const [classId, setClassId] = useState(classes[0]?.id ?? 0);
-  const [subject, setSubject] = useState("");
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [dueOn, setDueOn] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    start(async () => {
-      const res = await action({
-        classId,
-        subject,
-        title,
-        body,
-        dueOn: dueOn || undefined,
-      });
-      setMsg(res.ok ? "Set ✓" : (res.error ?? "Failed"));
-      if (res.ok) {
-        setTitle("");
-        setBody("");
-      }
-    });
-  }
+  const form = useForm({
+    fields: {
+      classId: { label: "Class", required: true },
+      subject: {
+        label: "Subject",
+        required: true,
+        validate: (v) => (v.trim().length < 2 ? "must be at least 2 characters" : null),
+      },
+      title: {
+        label: "Title",
+        required: true,
+        validate: (v) => (v.trim().length < 3 ? "must be at least 3 characters" : null),
+      },
+      body: { label: "Instructions", required: true },
+      dueOn: { label: "Due date" },
+    },
+    onSubmit: (values) =>
+      start(async () => {
+        const res = await action({
+          classId: Number(values.classId || classes[0]?.id || 0),
+          subject: values.subject ?? "",
+          title: values.title ?? "",
+          body: values.body ?? "",
+          dueOn: values.dueOn || undefined,
+        });
+        setMsg(res.ok ? "Homework set — done" : (res.error ?? "Failed to save"));
+        if (res.ok) {
+          form.setValue("title", "");
+          form.setValue("body", "");
+        }
+      }),
+  });
 
-  const inputCls =
-    "mt-1.5 h-12 w-full rounded-sm border border-border bg-surface px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  const submitError = msg && !msg.endsWith(" — done") ? msg : null;
 
   return (
-    <form onSubmit={submit} className="grid gap-s3h md:grid-cols-2">
-      <label className="block text-[13px] font-semibold">
-        Class
-        <select value={classId} onChange={(e) => setClassId(Number(e.target.value))} className={inputCls}>
+    <form onSubmit={form.handleSubmit} noValidate className="grid gap-s3h">
+      <ErrorSummary errors={form.summary} />
+
+      <Field name="classId" label="Class" error={form.errorFor("classId")}>
+        <select {...form.bind("classId")} className={inputCls(Boolean(form.errorFor("classId")))}>
           {classes.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
             </option>
           ))}
         </select>
-      </label>
-      <label className="block text-[13px] font-semibold">
-        Subject
-        <input value={subject} onChange={(e) => setSubject(e.target.value)} required placeholder="Mathematics" className={inputCls} />
-      </label>
-      <label className="block text-[13px] font-semibold md:col-span-2">
-        Title
-        <input value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Fractions worksheet 3" className={inputCls} />
-      </label>
-      <label className="block text-[13px] font-semibold md:col-span-2">
-        Instructions
+      </Field>
+
+      <Field
+        name="subject"
+        label="Subject"
+        hint="The learning area this homework belongs to, e.g. Mathematics"
+        error={form.errorFor("subject")}
+      >
+        <input {...form.bind("subject")} className={inputCls(Boolean(form.errorFor("subject")))} />
+      </Field>
+
+      <Field name="title" label="Title" hint="e.g. Fractions worksheet 3" error={form.errorFor("title")}>
+        <input {...form.bind("title")} className={inputCls(Boolean(form.errorFor("title")))} />
+      </Field>
+
+      <Field name="body" label="Instructions" error={form.errorFor("body")}>
         <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          required
+          {...form.bind("body")}
           rows={3}
           className="mt-1.5 w-full rounded-sm border border-border bg-surface px-3.5 py-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
-      </label>
-      <label className="block text-[13px] font-semibold">
-        Due date <span className="font-normal text-muted">(optional)</span>
-        <input type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} className={inputCls} />
-      </label>
-      <div className="flex items-center gap-s3 md:col-span-2">
+      </Field>
+
+      <Field name="dueOn" label="Due date" optional hint="Leave empty if there is no deadline">
+        <input type="date" {...form.bind("dueOn")} className={inputCls(false)} />
+      </Field>
+
+      {submitError ? (
+        <p role="alert" className="text-sm font-semibold text-danger">
+          {submitError}
+        </p>
+      ) : null}
+
+      <div className="flex items-center gap-s3">
         <Button variant="primary" size="md" type="submit" disabled={pending || classes.length === 0}>
           {pending ? "Setting…" : "Set homework"}
         </Button>
-        {msg ? (
-          <span className={`text-sm font-semibold ${msg.endsWith("✓") ? "text-ok" : "text-danger"}`} role="status">
+        {msg && msg.endsWith(" — done") ? (
+          <span className="text-sm font-semibold text-ok" role="status">
             {msg}
           </span>
         ) : null}

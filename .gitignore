@@ -10,3 +10,14 @@ next-env.d.ts
 
 # dev embedded postgres data dirs (any name)
 .devpg*
+
+# agent session scratch: logs, cookie jars, keys, certs — never commit
+.freebuff/**/*.log
+.freebuff/*.txt
+.freebuff/*.key
+.freebuff/*.json
+.freebuff/*.html
+.freebuff/preview-web.log.err
+backend/.freebuff/
+frontend/.freebuff/
+frontend/apps/web/.freebuff-cert/

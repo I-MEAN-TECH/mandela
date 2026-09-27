@@ -12,8 +12,8 @@ export default async function HomeworkPage() {
   return (
     <div>
       <SerifHeader
-        crumb="Classroom · Homework"
-        title={<>Set it once, <em>everyone knows.</em></>}
+        crumb="Classroom / Homework"
+        title={<>Set it once, everyone knows.</>}
         sub="Homework reaches the class's guardians on WhatsApp the moment you set it."
       />
 
@@ -54,7 +54,7 @@ export default async function HomeworkPage() {
 function GuardianHomeworkNotice() {
   return (
     <div>
-      <SerifHeader crumb="Classroom · Homework" title={<>What's <em>due.</em></>} />
+      <SerifHeader crumb="Classroom / Homework" title={<>What's due.</>} />
       <div className="mt-s7">
         <EmptyState
           title="Parents see homework on the mobile app"

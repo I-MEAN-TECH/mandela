@@ -8,6 +8,8 @@
 > 1. **No hardcoding** — every label, tab, module card, fee, roster and number comes from the school database (`school_settings` + school tables).
 > 2. **Ink & paper only** — color carries meaning (green=paid/present, amber=attention, red=overdue/absent), never decoration. Zero gradients.
 
+> **Module map note:** the Admin dashboard's complete sector coverage — all 35 modules with statuses, cards/forms/charts specs and the phased build order — now lives in `docs/ADMIN-BLUEPRINT.md`. That document supersedes the module map in `ADMIN-DASHBOARD.md` §2.7 (5-tab rule amended to 7 nav groups).
+
 **Demo DB reality check (2026-09):** 3 staff (bursar, teacher, principal — no admin row yet), 6 learners, 1 class, 5 guardians, 1 term. Every dashboard reads real data; the small dataset is why screens look minimal, not missing code.
 
 ---
@@ -19,7 +21,7 @@
 | Bursar | Today, Collect, Reconcile, Levies, Reports | ✅ all tabs live |
 | Teacher | Today, Mark, Homework, Messages, Class | ✅ all tabs live |
 | Principal | Today, Approve, Insights, Broadcast, Directory | ✅ all tabs live |
-| Admin | Today, People, Money, Insights, Settings | 🟡 no admin staff row seeded yet |
+| Admin | Today, Money, Spend, People, Academics, Operations, Care, Insights, Settings (8 mains, 028 seeds) | ✅ all mains live; admin account seeded (Njeri Kamau) |
 | Parent (guardian) | Home, Pay, Homework, Messages, Profile | 🟡 Home + Pay deep; Homework/Messages/Profile shallow |
 | Driver | Route, Manifest, Done | ⚪ no transport tables — deliberately not faked |
 
@@ -67,10 +69,15 @@ Shell: persistent left ink rail (icon rail on narrow screens, full labels ≥768
 **Still needs:**
 - **M-Pesa Daraja integration** (STK push + C2B callback → `mpesa_txn` → auto-confirm → receipt) — tables exist, integration ⚪
 - Fee structure editor for bursar (currently seeded only) (⚪)
-- Bulk billing: apply a fee structure to a whole class/term in one action (⚪)
 - Receipts PDF/print layout + SMS receipt (⚪ — receipt numbers are data already)
 - Part-payment plans, sibling discounts, scholarships (⚪)
-- Term-end statements per learner (⚪)
+
+**Money integrity (✅):** `GET /web/admin/integrity` runs five lifecycle
+invariants per school (no orphaned payments · receipts unique · optional fees
+consent-traceable · collected ≤ billed per term · no double M-Pesa confirm).
+Enforced by the harness (module 9) and surfaced in Settings → Money integrity.
+Term-end statements ship as **signed portable records** — see Module 4/8 and
+docs/RECORD-FORMAT.md.
 
 ---
 
@@ -107,12 +114,26 @@ Shell: persistent left ink rail (icon rail on narrow screens, full labels ≥768
 - Announcements feed on every dashboard; live watcher refreshes when new ones arrive
 - Landing page quote/hero and guardians' announcements all DB-driven
 
+**Works today (✅ added):**
+- **Per-school channels + daily loop** — admin connects WhatsApp Cloud API
+  (phone number ID + token) and SMTP email in Settings → Daily loop (a 3-step
+  wizard with test-send buttons, docs/SIMPLICITY.md); secrets are AES-256-GCM
+  encrypted at rest (`channel_config`, migration 033) and never returned by
+  the API (write-only)
+- **Morning digest** — one message per guardian per school day (fees balance ·
+  homework due this week · yesterday's attendance),Africa/Nairobi-timed,
+  deduped (`digest:<date>:<guardian>`), audit-logged; delivered WhatsApp-first
+  with email for parents who prefer it (`guardian.pref_channel`, self-service
+  on the Profile screen)
+- Verified end-to-end: digest queued → sent in simulate mode; live providers
+  activate the moment the admin pastes real credentials and hits Test
+
 **Still needs:**
-- **Actual WhatsApp delivery worker** — rows are created with `queued` state; the Africa's Talking / Meta Cloud API sender that flips them to sent/delivered/read is ⚪
 - Audience targeting (all / class / one guardian) — audience JSON column exists, UI ⚪
 - SMS fallback when a guardian isn't on WhatsApp (`sms_fallback` flag exists) (⚪)
 - WhatsApp template registration per school (provisioner stub exists) (⚪)
 - Two-way messaging (guardian replies) (🔮)
+- Delivered/read webhooks (state machine already carries `delivered`/`read`) (⚪)
 
 ---
 
@@ -127,6 +148,12 @@ Shell: persistent left ink rail (icon rail on narrow screens, full labels ≥768
 
 **Still needs:**
 - Audit trail screen for principal/admin (data exists, UI ⚪)
+- Portable records: signed fee statements / report cards / attendance summaries
+  that parents own and anyone can verify offline — **implemented** (✅):
+  `GET /web/records/:learnerId/:kind` issues a `mandela.record.v1` envelope
+  (HMAC-SHA256, chained via `prev_hash`, `record_export` ledger); verify any
+  record with `node scripts/verify-record.mjs <file> --key-file <key>`. Spec:
+  docs/RECORD-FORMAT.md. Parent-facing download button + PDF rendering (⚪)
 - Attendance-vs-collection correlation per class (🟡 raw data present)
 - Fee-defaulter list with contact actions (⚪)
 - Term-over-term comparison (needs a second real term of data) (⚪)
@@ -143,12 +170,12 @@ Shell: persistent left ink rail (icon rail on narrow screens, full labels ≥768
 - Every change immediately re-renders landing + shell (bootstrap is re-fetched per request)
 - Logo is a traced SVG path stored in `school_settings.logo_svg_path` (data, not an asset)
 - Role guards verified: bursar write → blocked; principal write → works
+- **School colors editor (✅):** `theme_json` brand tokens (primary + deep brand) edit via swatch pills in Settings; bootstrap/settings filter them to hex strings and `ThemeVars` injects `:root` overrides so every screen — login included — repaints from the DB. State colors (ok/warn/danger) stay product-owned (WCAG AA: color never carries meaning alone). Every change audit-logged; empty theme = product default.
 
 **Still needs:**
-- Admin staff row + login in the demo DB (role fully wired, no account) (⚪)
 - Logo upload/replace flow (regenerate the trace from a new PNG) (⚪)
 - Term/academic-year management UI (⚪)
-- Per-school theming (paper/ink overrides in `school_settings`) (🔮)
+- Per-school theming: brand colors ✅ (editor above); per-token fine-tuning beyond the two brand surfaces (🔮)
 
 ---
 
@@ -167,6 +194,7 @@ Shell: persistent left ink rail (icon rail on narrow screens, full labels ≥768
 - **Sessions:** HMAC-signed cookie tokens (guardian phone login normalizes 07/01/+254 formats); better-auth + OTP is the v2 path
 - **Liveness:** LiveRefresh hash-polling (15s, pauses when tab hidden) + landing HeroPulse (12s) + ticking clock; real DB change detection, not fake timers
 - **Design system:** `@mandela/ui` — tokens (ink/paper ramp sampled from the logo, zero gradients), KpiCard/Meter/Delta/DataTable/SerifHeader/Button/Card, motion primitives (Reveal, CountUp, NavPill) — mirrored to `theme.ts` for the future NativeWind mobile app
+- **Curriculum as configuration (migrations 008–010):** `curriculum`, `curriculum_level`, `learning_area`, `assessment_scheme` tables + seeded packs (`cbe`, `844`, `british`) — any school, any curriculum (docs/CURRICULUM-ARCHITECTURE.md); classes attach to a ladder via `class.level_id`; assessment/report rendering reads scales as data
 - **Known gaps:** demo email-match login (no passwords/OTP), one dev tenant, audit UI missing, tests = harness + RLS suite (no unit-test layer yet)
 
 ---

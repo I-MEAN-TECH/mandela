@@ -1,26 +1,35 @@
 import { cn } from "../cn";
 
 /**
- * Card — the comp's surface: 18px radius, hairline border, ambient shadow.
- * Flat color only — depth is shadow + space, never gradients.
+ * Card — the reference's surface: white, 16px radius, sage hairline,
+ * barely-there shadow. Flat color only — depth is hairline + space.
  */
-export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
+export function Card({ className, children, id }: { className?: string; children: React.ReactNode; id?: string }) {
   return (
-    <section className={cn("rounded border border-border bg-surface p-s5 shadow-1", className)}>
+    <section
+      id={id}
+      data-card=""
+      className={cn(
+        // The alive surface: a 2px lift + deeper shadow on hover — flat at
+        // rest like the comp, responsive to the hand. Reduced motion: none.
+        "rounded border border-border bg-surface p-s5 shadow-1 transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(.22,1,.36,1)] hover:-translate-y-0.5 hover:shadow-2 motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-1 motion-reduce:transition-none",
+        className,
+      )}
+    >
       {children}
     </section>
   );
 }
 
 /**
- * CardHead — comp header: bold 15.5px title + quiet sub, optional right link.
- * Replaces the old uppercase CardTitle (kept below for existing callers).
+ * CardHead — the reference's card header: Poppins 18px semibold title +
+ * quiet sub, optional right action.
  */
 export function CardHead({ title, sub, action }: { title: string; sub?: string; action?: React.ReactNode }) {
   return (
     <header className="mb-s4 flex items-start justify-between gap-s3">
       <div className="min-w-0">
-        <h2 className="text-[15.5px] font-semibold leading-snug tracking-[-0.01em]">{title}</h2>
+        <h2 className="font-display text-[17px] font-semibold leading-snug tracking-[-0.01em] text-ink-950">{title}</h2>
         {sub ? <p className="mt-0.5 text-[12.5px] leading-snug text-muted">{sub}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
@@ -70,7 +79,7 @@ export function StatusPill({ tone, children }: { tone: StatusTone; children: Rea
   const icon = tone === "ok" ? "✓" : tone === "warn" ? "!" : tone === "danger" ? "✕" : "•";
   return (
     <span
-      className={cn("inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-xs font-semibold", tones[tone])}
+      className={cn("inline-flex items-center gap-1 rounded-sm px-2.5 py-1 text-xs font-semibold", tones[tone])}
       aria-label={String(children)}
     >
       <span aria-hidden>{icon}</span>
@@ -79,7 +88,7 @@ export function StatusPill({ tone, children }: { tone: StatusTone; children: Rea
   );
 }
 
-/** Microlabel — mono uppercase tracked label, the comp's signature micro-typography. */
+/** Microlabel — mono uppercase tracked label. */
 export function Microlabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return <p className={cn("microlabel", className)}>{children}</p>;
 }

@@ -1,13 +1,15 @@
 import { requireSession, requireBootstrap, getLevies } from "@/lib/api";
 import { Card, CardHead, DataTable, EmptyState, KpiCard, SerifHeader, Money } from "@mandela/ui";
 import { redirect } from "next/navigation";
+import { TwinLinks } from "@/components/TwinLinks";
+import { noun } from "@/lib/plural";
 import { AppLiveBar } from "../LiveBar";
 
 /** Levies — what the school bills, per class, optional levies marked. */
 export default async function LeviesPage() {
   const me = await requireSession();
   const boot = await requireBootstrap();
-  if (me.principal.kind !== "staff") redirect("/app");
+  if (["teacher", "driver"].includes(me.principal.role ?? "")) redirect("/app");
   const { levies } = await getLevies();
 
   const required = levies.filter((l) => !l.is_optional);
@@ -17,15 +19,22 @@ export default async function LeviesPage() {
   return (
     <div>
       <SerifHeader
-        crumb={`${boot.school.name} · Money`}
-        title={<>What the school <em>charges.</em></>}
+        crumb={`${boot.school.name} / Money`}
+        title={<>What the school charges.</>}
         sub="Fee structures for the current term. Optional levies need a guardian's consent before they bill."
         actions={<AppLiveBar />}
       />
 
       <div className="mt-s7 grid gap-s3h">
+        <TwinLinks
+          label="Pricing"
+          twins={[
+            { href: "/app/money/fees", label: "Fee structures" },
+            { href: "/app/levies", label: "Levies" },
+          ]}
+        />
         <div className="grid gap-s3h sm:grid-cols-2 xl:grid-cols-3">
-          <KpiCard ink label="Required per learner" value={<Money cents={totalRequired} />} note={`${required.length} ${required.length === 1 ? "item" : "items"} this term`} />
+          <KpiCard ink label="Required per learner" value={<Money cents={totalRequired} />} note={`${required.length} ${noun(required.length, "item")} this term`} />
           <KpiCard label="Optional levies" value={optional.length} note="billed only after consent" />
           <KpiCard label="Structures" value={levies.length} note="across all classes" />
         </div>

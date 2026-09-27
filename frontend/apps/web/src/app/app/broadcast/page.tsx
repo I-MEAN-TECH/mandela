@@ -13,8 +13,8 @@ export default async function BroadcastPage() {
   return (
     <div>
       <SerifHeader
-        crumb="Talk · Broadcast"
-        title={<>Say it once, <em>everyone hears.</em></>}
+        crumb="Talk / Broadcast"
+        title={<>Say it once, everyone hears.</>}
         sub="Announcements reach every guardian on WhatsApp instantly. Alerts are marked urgent."
       />
 

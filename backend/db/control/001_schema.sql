@@ -26,6 +26,8 @@ CREATE TABLE school (
   learner_cap       int NOT NULL DEFAULT 150,
   loyalty_percent   numeric(5,2) NOT NULL DEFAULT 0,  -- 0..20 ladder
   founded_year      int,                           -- founding-20 flag source
+  join_code         text UNIQUE,                   -- school invite code (MANDELA-XXXX, Crockford base32)
+  join_code_updated_at timestamptz,
   onboarded_at      timestamptz,
   created_at        timestamptz NOT NULL DEFAULT now(),
   updated_at        timestamptz NOT NULL DEFAULT now()

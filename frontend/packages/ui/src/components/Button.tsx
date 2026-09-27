@@ -4,13 +4,16 @@ import { forwardRef } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 /**
- * Button — pill radius, flat ink fill (the logo's own black).
- * Everything else uses `variant="secondary" | "ghost" | "danger"`.
- * 48px min height (mobile-design), AAA contrast, reduced-motion aware.
- * Flat color only — no gradients, ever.
+ * Button — the reference system's button family: 12px rounded rectangles,
+ * flat fills, no gradients. primary = deep pine (the confident action),
+ * vivid = lime (the ONE bright moment per screen), secondary = white card,
+ * ghost = quiet text. 48px min height (mobile-design), AA contrast,
+ * reduced-motion aware.
  */
 const variants = {
   primary: "bg-primary text-on-primary hover:bg-primary-hover shadow-1 hover:shadow-2",
+  /** Vivid — the ONE lime action per screen (BRAND.md rule 2). Dark label on lime. */
+  vivid: "bg-accent text-on-accent hover:bg-accent-hover shadow-1 hover:shadow-2",
   secondary: "bg-surface text-text border border-border hover:bg-paper-100 shadow-1",
   ghost: "text-muted hover:text-text hover:bg-paper-100",
   danger: "bg-danger text-white hover:opacity-90 shadow-1",
@@ -42,7 +45,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       transition={{ duration: 0.12 }}
       disabled={disabled || loading}
       className={[
-        "inline-flex select-none items-center justify-center gap-s2 whitespace-nowrap rounded-pill font-medium",
+        "inline-flex select-none items-center justify-center gap-s2 whitespace-nowrap rounded-sm font-medium",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg",
         "disabled:opacity-50 disabled:pointer-events-none",
         variants[variant],

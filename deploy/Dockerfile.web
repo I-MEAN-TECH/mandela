@@ -1,0 +1,23 @@
+# MANDELA — Web image (build context: repo root)
+# Carries the workspace layout so @mandela/ui (design system) resolves at
+# runtime exactly as in dev.
+FROM node:22-alpine AS build
+WORKDIR /app
+RUN corepack enable
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY frontend/packages/ui/package.json frontend/packages/ui/
+COPY frontend/apps/web/package.json frontend/apps/web/
+RUN pnpm install --frozen-lockfile --filter @mandela/web...
+COPY frontend/packages/ui frontend/packages/ui
+COPY frontend/apps/web frontend/apps/web
+RUN pnpm --filter @mandela/web build
+
+FROM node:22-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+ENV MANDELA_API_URL=http://api:4000
+COPY --from=build /app/package.json /app/package.json
+COPY --from=build /app/pnpm-workspace.yaml /app/pnpm-workspace.yaml
+COPY --from=build /app/node_modules /app/node_modules
+COPY --from=build /app/frontend /app/frontend
+CMD ["pnpm", "--filter", "@mandela/web", "start"]

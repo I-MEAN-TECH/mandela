@@ -6,9 +6,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "turbo run build",
+    "build": "node scripts/check-theme-colors.mjs && turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
+    "check:theme": "node scripts/check-theme-colors.mjs",
     "dev": "turbo run dev",
     "bootstrap:db": "pnpm --filter @mandela/api bootstrap:cluster",
     "provision:school": "pnpm --filter @mandela/api provision:school",

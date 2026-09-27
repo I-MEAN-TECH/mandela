@@ -1,4 +1,5 @@
 import { effectivePg, useEmbeddedPostgres, config } from "../config.js";
+import { hashPassword } from "../web/password.js";
 import { startEmbeddedPostgres, stopEmbeddedPostgres } from "../embedded-postgres.js";
 import { getControlPool, getSchoolPool, closeAllPools } from "../db/pool.js";
 
@@ -20,9 +21,10 @@ const DB = `mandela_${TENANT}`;
 
 interface SeedStaff { auth: string; name: string; email: string; phone: string; role: string; classes: string[] }
 const STAFF: SeedStaff[] = [
-  { auth: "seed_admin_1", name: "Wanjiru Kariuki", email: "principal@demo.mandela.school", phone: "254711000001", role: "principal", classes: [] },
+  { auth: "seed_principal_1", name: "Wanjiru Kariuki", email: "principal@demo.mandela.school", phone: "254711000001", role: "principal", classes: [] },
   { auth: "seed_teacher_1", name: "David Otieno", email: "teacher@demo.mandela.school", phone: "254711000002", role: "teacher", classes: ["G7B"] },
   { auth: "seed_bursar_1", name: "Halima Yusuf", email: "bursar@demo.mandela.school", phone: "254711000003", role: "bursar", classes: [] },
+  { auth: "seed_admin_1", name: "Njeri Kamau", email: "admin@demo.mandela.school", phone: "254711000004", role: "admin", classes: [] },
 ];
 
 interface SeedLearner { adm: string; first: string; middle: string | null; last: string; gender: "M" | "F"; classCode: string; boarding: boolean }
@@ -104,11 +106,34 @@ async function main() {
         staffIds.set(s.auth, r.rows[0]!.id);
       }
 
-      // ---- classes -------------------------------------------------------------
+      // ---- dev-only password grant ---------------------------------------
+      // Demo staff get the password "demo" so the password path is exercised
+      // in dev. NEVER run this line against a real school's database.
+      await client.query(
+        `UPDATE staff SET login_hash = $1
+         WHERE email = ANY($2::text[]) AND login_hash IS NULL`,
+        [hashPassword("demo"), STAFF.map((s) => s.email)],
+      );
+
+      // ---- audit sample: every staff insert is logged (governance heartbeat) --
+      await client.query(
+        `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, after)
+         SELECT s.id, 'staff', 'staff.create', 'staff', s.id::text,
+                jsonb_build_object('full_name', s.full_name, 'role', s.role::text)
+         FROM staff s
+         WHERE s.email IN ('principal@demo.mandela.school','teacher@demo.mandela.school',
+                           'bursar@demo.mandela.school','admin@demo.mandela.school')
+         ON CONFLICT DO NOTHING`,
+      );
+
+      // ---- classes (attached to the CBE ladder — 008_classroom_curriculum) -----
       const g7b = await client.query<{ id: number }>(
-        `INSERT INTO class (code, name, level, stream, teacher_id)
-         VALUES ('G7B', 'Grade 7 Blue', 'Grade 7', 'Blue', $1)
-         ON CONFLICT (code) DO UPDATE SET teacher_id = EXCLUDED.teacher_id RETURNING id`,
+        `INSERT INTO class (code, name, level, stream, teacher_id, level_id)
+         SELECT 'G7B', 'Grade 7 Blue', 'Grade 7', 'Blue', $1, lv.id
+         FROM curriculum_level lv JOIN curriculum cu ON cu.id = lv.curriculum_id
+         WHERE cu.code = 'cbe' AND lv.code = 'G7'
+         ON CONFLICT (code) DO UPDATE SET teacher_id = EXCLUDED.teacher_id, level_id = EXCLUDED.level_id
+         RETURNING id`,
         [staffIds.get("seed_teacher_1")],
       );
 
@@ -262,13 +287,13 @@ async function main() {
         `INSERT INTO announcement (title, body, audience, urgency, channel, created_by)
          SELECT 'Sports day moved to Friday', 'Sports day moves to this Friday. Learners come in house kits. Parents are welcome from 10am.', '{"all":true}'::jsonb, 'update', 'whatsapp', $1
          WHERE NOT EXISTS (SELECT 1 FROM announcement WHERE title = 'Sports day moved to Friday')`,
-        [staffIds.get("seed_admin_1")],
+        [staffIds.get("seed_principal_1")],
       );
       await client.query(
         `INSERT INTO announcement (title, body, audience, urgency, channel, created_by)
          SELECT 'Fee receipts now automatic', 'Every M-Pesa payment now returns a receipt in the app instantly. No more paper queues.', '{"all":true}'::jsonb, 'update', 'whatsapp', $1
          WHERE NOT EXISTS (SELECT 1 FROM announcement WHERE title = 'Fee receipts now automatic')`,
-        [staffIds.get("seed_admin_1")],
+        [staffIds.get("seed_principal_1")],
       );
 
       await client.query("COMMIT");

@@ -1,6 +1,7 @@
 import { requireSession, requireBootstrap, getPendingPayments, confirmPaymentAction } from "@/lib/api";
 import { Card, CardHead, EmptyState, KpiCard, Money, SerifHeader, StatusPill } from "@mandela/ui";
 import { redirect } from "next/navigation";
+import { TwinLinks } from "@/components/TwinLinks";
 import { AppLiveBar } from "../LiveBar";
 import { ConfirmButtons } from "./ConfirmButtons";
 
@@ -16,13 +17,20 @@ export default async function ReconcilePage() {
   return (
     <div>
       <SerifHeader
-        crumb={`${boot.school.name} · Money`}
-        title={<>Clear the <em>queue.</em></>}
+        crumb={`${boot.school.name} / Money`}
+        title={<>Clear the queue.</>}
         sub="Bank slips and cheques wait here until you confirm them. Confirming is audit-logged and issues the receipt."
         actions={<AppLiveBar />}
       />
 
       <div className="mt-s7 grid gap-s3h">
+        <TwinLinks
+          label="Confirm & Rails"
+          twins={[
+            { href: "/app/reconcile", label: "Confirm queue" },
+            { href: "/app/money/rails", label: "Rails (CSV & M-Pesa)" },
+          ]}
+        />
         <div className="grid gap-s3h sm:grid-cols-2 xl:grid-cols-3">
           <KpiCard ink label="Awaiting confirmation" value={pending.length} note="payments in the queue" />
           <KpiCard label="Value pending" tone="warn" value={<Money cents={total} />} note="not yet in collections" />
@@ -33,7 +41,7 @@ export default async function ReconcilePage() {
           <CardHead title="Pending payments" sub="Oldest first — confirm when the money lands" />
           {pending.length === 0 ? (
             <EmptyState
-              title="Queue is clear ✓"
+              title="Queue is clear — done"
               body="Nothing is waiting. Pending payments appear here the moment they're recorded or flagged."
             />
           ) : (

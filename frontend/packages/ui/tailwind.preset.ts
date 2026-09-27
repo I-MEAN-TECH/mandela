@@ -4,7 +4,7 @@ import type { Config } from "tailwindcss";
  * Tailwind preset — exposes Mandela tokens as utilities.
  * Consumed by apps/web AND apps/mobile (NativeWind v4), so a single
  * theme file drives all three surfaces.
- * v3: monochrome ink + paper (the logo palette); status chroma only.
+ * v6: the green ledger — sage canvas, pine ramp, lime accent.
  */
 export const mandelaPreset: Partial<Config> = {
   darkMode: "class",
@@ -29,6 +29,29 @@ export const mandelaPreset: Partial<Config> = {
           300: "var(--paper-300)",
           400: "var(--paper-400)",
         },
+        lime: {
+          50: "var(--lime-50)",
+          100: "var(--lime-100)",
+          200: "var(--lime-200)",
+          300: "var(--lime-300)",
+          400: "var(--lime-400)",
+          500: "var(--lime-500)",
+          600: "var(--lime-600)",
+          700: "var(--lime-700)",
+        },
+        pine: {
+          50: "var(--pine-50)",
+          100: "var(--pine-100)",
+          200: "var(--pine-200)",
+          300: "var(--pine-300)",
+          400: "var(--pine-400)",
+          500: "var(--pine-500)",
+          600: "var(--pine-600)",
+          700: "var(--pine-700)",
+          800: "var(--pine-800)",
+          900: "var(--pine-900)",
+          950: "var(--pine-950)",
+        },
         // semantic — always use these in screens, never raw ramps
         bg: "var(--bg)",
         surface: "var(--surface)",
@@ -41,6 +64,10 @@ export const mandelaPreset: Partial<Config> = {
         ring: "var(--ring)",
         "brand-deep": "var(--brand-deep)",
         "brand-deep-contrast": "var(--brand-deep-contrast)",
+        accent: "var(--accent)",
+        "accent-hover": "var(--accent-hover)",
+        "accent-soft": "var(--accent-soft)",
+        "on-accent": "var(--on-accent)",
         ok: "var(--ok)",
         "ok-bg": "var(--ok-bg)",
         danger: "var(--danger)",

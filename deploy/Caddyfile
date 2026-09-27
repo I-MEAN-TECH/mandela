@@ -1,0 +1,52 @@
+# ============================================================================
+# MANDELA — Caddyfile (one file serves BOTH deployment modes)
+#
+# SaaS mode:        many schools, one platform
+#   *.mandela.school   -> wildcard DNS, per-school DB via resolveTenant()
+#   mandela.school     -> landing
+#
+# Enterprise mode:  standalone install, school's own domain
+#   portal.stmarys.ac.ke -> SAME app; tenant resolved by exact host match;
+#   Caddy auto-TLS via the on_demand ask endpoint (no secrets in the file).
+#
+# Tenant resolution lives in ONE place: the API's resolveTenant() —
+#   1. exact caddy_host match  (enterprise domains, full subdomains)
+#   2. first-label slug match  (dev hosts, school.mandela.school)
+# ============================================================================
+
+{
+	# Enterprise custom domains: ask the API before issuing any cert for a
+	# host not named in this file. Replace MANDela API host for your install.
+	on_demand_tls {
+		ask http://api:4000/web/tenant-check
+	}
+	email ops@mandela.school
+}
+
+# ---------------------------- ENTERPRISE MODE -------------------------------
+# The school's own domain. For a standalone install this is usually the ONLY
+# site block. DNS: portal.stmarys.ac.ke -> this server; no other config.
+# (Listed first so a dedicated install can delete the SaaS block wholesale.)
+#
+# https://portal.stmarys.ac.ke {
+# 	reverse_proxy api:4000
+# }
+
+# ------------------------------ SAAS MODE -----------------------------------
+# Every provisioned school subdomain. Wildcard DNS -> this server; the API
+# resolves the tenant per request.
+*.mandela.school {
+	reverse_proxy web:3000
+}
+
+# Landing + platform root
+mandela.school {
+	reverse_proxy web:3000
+}
+
+# ------------------------------- THE API ------------------------------------
+# Also exposed directly for staff/mobile clients that pin the API host
+# (push, offline sync, future native shells).
+api.mandela.school {
+	reverse_proxy api:4000
+}

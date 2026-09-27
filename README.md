@@ -61,6 +61,9 @@ mandela/
    guards (layer 3). The UI never *grants* rights, only reflects them.
 6. **Consent is a ledger** — every parent consent is append-only and auditable
    (Kenya DPA).
+7. **Hex lives in tokens.css only** — `pnpm check:theme` (runs before every
+   build) fails when a hex color appears outside the theme allowlist, keeping
+   the ink-and-paper system (and per-school theming) honest.
 
 ## Shared-token contract
 
@@ -86,8 +89,30 @@ All three surfaces import the same design tokens:
       approve, class. Branding, nav labels, modules and the logo mark all come from the DB.
 - [x] Design system v2: monochrome ink-and-paper palette sampled from `mandela.png`;
       chroma reserved for status; zero gradients (hard rule in `tokens.css`)
-- [x] Module harness: 61-check end-to-end suite (`backend/apps/api/scripts/debug-modules.mjs`)
+- [x] Module harness: 78-check end-to-end suite (`backend/apps/api/scripts/debug-modules.mjs`)
       + behavioral RLS suite; RLS enforced in the live API path (SET ROLE mandela_app)
+- [x] Daily loop: per-school WhatsApp (Cloud API) + Email (SMTP) channels the admin
+      connects in Settings → step-form, secrets encrypted at rest (AES-256-GCM),
+      test-send buttons, and a morning digest per guardian (fees · homework · attendance)
+      delivered by the talk worker — deduped, audited, channel preference per parent
+- [x] Portable records (docs/RECORD-FORMAT.md): signed, chained, parent-owned
+      fee statements / report cards / attendance summaries, verifiable offline
+      via `node scripts/verify-record.mjs <file> --key-file <key>`
+- [x] Money-lifecycle integrity checks: five SQL invariants (no orphaned payments,
+      unique receipts, consent traceability, ledger closed, no double M-Pesa
+      confirm) — enforced by the harness, surfaced in Settings
+- [x] Admin dashboard verified end-to-end as the admin role: all 8 nav mains
+      (Today · Money · Spend · People · Academics · Operations · Care · Insights ·
+      Settings) and 36 sub-routes render live data; admin account seeded
+- [x] School colors as data: `theme_json` brand tokens edited in Settings;
+      `ThemeVars` injects `:root` overrides so every screen repaints from the DB.
+      State colors stay product-owned (WCAG AA — color never carries meaning alone)
+- [x] SaaS + Enterprise ready: one codebase, two modes — SaaS (wildcard subdomains,
+      per-school DBs, control-plane tiering/fleet/metering) and Enterprise standalone
+      (`deploy/` pack: docker-compose + Caddy TLS with on-demand custom-domain ask,
+      per-tenant PWA manifest, env-tuned pools). Tenant resolution matches exact
+      custom domains first, slugs second; `deploy/README.md` documents the scaling
+      path to 1M+ users
 - [ ] CBC assessment capture + report cards (schema exists, screens pending)
 - [ ] WhatsApp delivery worker · M-Pesa Daraja integration
 - [ ] better-auth integration (login, phone-OTP for parents)
@@ -110,7 +135,7 @@ pnpm seed:branding       # loads the traced logo + role nav into school_settings
 pnpm --filter @mandela/web dev   # http://localhost:3000
 
 # Demo logins (dev — email match only, better-auth arrives in v2):
-#   principal@demo.mandela.school · teacher@demo.mandela.school · bursar@demo.mandela.school
+#   admin@ · principal@ · teacher@ · bursar@demo.mandela.school
 #   guardians: phone 254733000001..5 (login with 0733000001 form)
 
 # Provision a real school:

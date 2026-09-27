@@ -1,0 +1,10 @@
+import { Pool } from "pg";
+const p = new Pool({ host: "127.0.0.1", port: 54329, user: "mandela", password: "mandela_dev_pw", database: "mandela_demo" });
+const t = await p.query(`SELECT table_name FROM information_schema.tables WHERE table_name IN ('board_member','repair_report','dorm','exeat_pass','health_record','clinic_visit','transport_route','feature_flag') ORDER BY 1`);
+console.log("tables:", t.rows.map((r: { table_name: string }) => r.table_name));
+const nav = await p.query(`SELECT nav_json->'admin' AS admin, nav_json->'principal' AS principal FROM school_settings WHERE id='default'`);
+console.log("admin nav:", nav.rows[0]!.admin);
+console.log("principal nav:", nav.rows[0]!.principal);
+const f = await p.query(`SELECT routine_name FROM information_schema.routines WHERE routine_name='infirmary_stats'`);
+console.log("fn:", f.rows);
+await p.end();

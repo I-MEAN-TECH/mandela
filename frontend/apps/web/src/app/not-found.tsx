@@ -7,7 +7,7 @@ export default function NotFound() {
       <div className="max-w-md">
         <p className="microlabel">Page not found</p>
         <h1 className="display mt-s3 text-[32px] text-ink-950">
-          Nothing lives <em>here.</em>
+          Nothing lives here.
         </h1>
         <p className="mt-s3 text-sm leading-relaxed text-muted">
           The page you're after doesn't exist — it may have moved, or the address is mistyped.
