@@ -1,0 +1,12 @@
+Role / dashboard	Email	Lands on
+Admin (Njeri Kamau)	admin@demo.mandela.school	Admin Pulse — the everything view
+Principal	principal@demo.mandela.school	Principal Today
+Teacher	teacher@demo.mandela.school	Teacher Today (mark roster, heatmap)
+Bursar	bursar@demo.mandela.school	Bursar Today (collections, confirmations)
+Counter	counter@demo.mandela.school…¹	Front-desk Today (funnel, visitors) ¹
+Driver	driver@demo.mandela.school…¹	Driver Today (route, manifest) ¹
+Dorm parent	dormparent@demo.mandela.school	Dorm rollcall
+Janitor	janitor@demo.mandela.school	Janitor Today (repairs)
+Librarian	librarian@demo.mandela.school	Librarian Today (issues/returns)
+Patron	patron@demo.mandela.school	Patron Today (house standings)
+HOD	hod@demo.mandela.school	HOD Today (teacher base + dept overlay)
