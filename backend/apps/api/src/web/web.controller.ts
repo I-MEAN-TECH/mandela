@@ -486,6 +486,16 @@ export class WebController {
    * card enforces draft-never-leaves for guardians. Both are lenses over the
    * ledger, not new sources — no new tables, no new math.
    */
+  /** THE receipt print payload — by receipt number. Guardians may fetch their own. */
+  @Get("print/receipt")
+  async printReceipt(@Req() req: Request, @Query("receiptNo") receiptNo?: string) {
+    if (!receiptNo) return { error: "receiptNo required" };
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal) return { error: "session required" };
+    return web.paymentReceipt(tenant.dbName, principal, receiptNo);
+  }
+
   @Get("print/report-card")
   async printReportCard(
     @Req() req: Request,
@@ -1062,12 +1072,26 @@ export class WebController {
   @Post("money/payments")
   @HttpCode(200)
   async recordPayment(@Req() req: Request, @Body() body: unknown) {
+    const detailsShape = z
+      .object({
+        mpesa_code: z.string().max(40).optional(),
+        mpesa_phone: z.string().max(20).optional(),
+        mpesa_time: z.string().max(40).optional(),
+        slip_no: z.string().max(40).optional(),
+        bank_name: z.string().max(60).optional(),
+        cheque_no: z.string().max(40).optional(),
+        cheque_date: z.string().max(40).optional(),
+      })
+      .strict()
+      .optional();
     const input = z
       .object({
         learnerId: z.string().uuid(),
         amountCents: z.number().int().positive(),
         method: z.enum(["mpesa", "bank", "cash", "cheque"]),
         reference: z.string().max(80).optional(),
+        details: detailsShape,
+        paidAt: z.string().max(40).optional(),
       })
       .parse(body);
     const tenant = await tenantFromReq(req);
@@ -1075,6 +1099,41 @@ export class WebController {
     if (!principal) return { error: "session required" };
     const result = await web.recordPayment(tenant.dbName, principal, input);
     return { ok: true, ...result };
+  }
+
+  /** Edit a recorded payment — audited before/after, money roles only. */
+  @Post("money/payments/update")
+  @HttpCode(200)
+  async updatePayment(@Req() req: Request, @Body() body: unknown) {
+    const detailsShape = z
+      .object({
+        mpesa_code: z.string().max(40).optional(),
+        mpesa_phone: z.string().max(20).optional(),
+        mpesa_time: z.string().max(40).optional(),
+        slip_no: z.string().max(40).optional(),
+        bank_name: z.string().max(60).optional(),
+        cheque_no: z.string().max(40).optional(),
+        cheque_date: z.string().max(40).optional(),
+      })
+      .strict()
+      .optional();
+    const input = z
+      .object({
+        paymentId: z.string().uuid(),
+        amountCents: z.number().int().positive().optional(),
+        method: z.enum(["mpesa", "bank", "cash", "cheque"]).optional(),
+        reference: z.string().max(80).nullable().optional(),
+        details: detailsShape,
+        paidAt: z.string().max(40).nullable().optional(),
+      })
+      .parse(body);
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { error: "staff session required" };
+    if (!["admin", "bursar"].includes(principal.role ?? "")) {
+      return { ok: false, error: "Only admin or bursar can edit payments" };
+    }
+    return web.updatePayment(tenant.dbName, principal, input.paymentId, input);
   }
 
   // -- talk ------------------------------------------------------------------------

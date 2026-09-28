@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 
 import { useState, useTransition } from "react";
 import { Button, Wizard } from "@mandela/ui";
-import type { LearnerRow } from "@/lib/api";
+import type { LearnerRow, PaymentDetails } from "@/lib/api";
 
 const METHODS = ["mpesa", "cash", "bank", "cheque"] as const;
 
@@ -18,18 +18,33 @@ export function PayForm({
   action,
 }: {
   learners: LearnerRow[];
-  action: (input: { learnerId: string; amountCents: number; method: string; reference?: string }) => Promise<{
-    ok: boolean;
-    error?: string;
-    data?: unknown;
-  }>;
+  action: (input: {
+    learnerId: string; amountCents: number; method: string; reference?: string;
+    details?: PaymentDetails; paidAt?: string;
+  }) => Promise<{ ok: boolean; error?: string; data?: unknown }>;
 }) {
   const [method, setMethod] = useState<string>("mpesa");
   const [reference, setReference] = useState("");
+  // Method-specific details — what the method demands, captured here so the
+  // receipt and ledger can answer "show me the proof" for every shilling.
+  const [mpesaCode, setMpesaCode] = useState("");
+  const [mpesaPhone, setMpesaPhone] = useState("");
+  const [mpesaTime, setMpesaTime] = useState("");
+  const [slipNo, setSlipNo] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [chequeNo, setChequeNo] = useState("");
+  const [chequeDate, setChequeDate] = useState("");
   const [learnerId, setLearnerId] = useState(learners[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [pending, start] = useTransition();
   const [resetKey, setResetKey] = useState(0);
+
+  const details = (): PaymentDetails | undefined => {
+    if (method === "mpesa") return { mpesa_code: mpesaCode, mpesa_phone: mpesaPhone, mpesa_time: mpesaTime };
+    if (method === "bank") return { slip_no: slipNo, bank_name: bankName };
+    if (method === "cheque") return { cheque_no: chequeNo, cheque_date: chequeDate, bank_name: bankName };
+    return undefined;
+  };
 
   const learner = learners.find((l) => l.id === learnerId);
   const amountNum = Number((amount || "").replace(/,/g, ""));
@@ -91,7 +106,7 @@ export function PayForm({
         },
         {
           title: "How paid",
-          hint: "Tap the method the money arrived by.",
+          hint: "Tap the method, then prove it — the receipt shows what you captured.",
           content: (
             <div className="grid gap-s3h">
               <div className="flex flex-wrap gap-2" role="group" aria-label="Payment method">
@@ -109,8 +124,112 @@ export function PayForm({
                   </button>
                 ))}
               </div>
+
+              {method === "mpesa" ? (
+                <div className="grid gap-2 rounded-sm border border-border bg-paper-50 p-3">
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-ink-500">M-Pesa details</p>
+                  <label htmlFor="payform-mpesa-code" className="block text-[13px] font-semibold">
+                    M-Pesa code <span className="font-normal text-danger">*</span>
+                  </label>
+                  <input
+                    id="payform-mpesa-code"
+                    value={mpesaCode}
+                    onChange={(e) => setMpesaCode(e.target.value)}
+                    autoComplete="off"
+                    placeholder="QGH7KL2M9P"
+                    className="h-11 w-full rounded-sm border border-border bg-surface px-3.5 font-mono text-sm uppercase outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <label htmlFor="payform-mpesa-phone" className="block text-[13px] font-semibold">
+                    Phone used
+                  </label>
+                  <input
+                    id="payform-mpesa-phone"
+                    value={mpesaPhone}
+                    onChange={(e) => setMpesaPhone(e.target.value)}
+                    inputMode="tel"
+                    autoComplete="off"
+                    placeholder="07XX XXX XXX"
+                    className="h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <label htmlFor="payform-mpesa-time" className="block text-[13px] font-semibold">
+                    Time received
+                  </label>
+                  <input
+                    id="payform-mpesa-time"
+                    type="datetime-local"
+                    value={mpesaTime}
+                    onChange={(e) => setMpesaTime(e.target.value)}
+                    className="h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <p className="text-[11.5px] text-muted">The payment posts at this time — the moment the SMS says the money landed.</p>
+                </div>
+              ) : null}
+
+              {method === "bank" ? (
+                <div className="grid gap-2 rounded-sm border border-border bg-paper-50 p-3">
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-ink-500">Bank slip details</p>
+                  <label htmlFor="payform-slip" className="block text-[13px] font-semibold">
+                    Slip number <span className="font-normal text-danger">*</span>
+                  </label>
+                  <input
+                    id="payform-slip"
+                    value={slipNo}
+                    onChange={(e) => setSlipNo(e.target.value)}
+                    autoComplete="off"
+                    className="h-11 w-full rounded-sm border border-border bg-surface px-3.5 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <label htmlFor="payform-bank" className="block text-[13px] font-semibold">
+                    Bank
+                  </label>
+                  <input
+                    id="payform-bank"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    autoComplete="off"
+                    placeholder="Equity · KCB · Co-op"
+                    className="h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+              ) : null}
+
+              {method === "cheque" ? (
+                <div className="grid gap-2 rounded-sm border border-border bg-paper-50 p-3">
+                  <p className="text-[12px] font-semibold uppercase tracking-wide text-ink-500">Cheque details</p>
+                  <label htmlFor="payform-cheque" className="block text-[13px] font-semibold">
+                    Cheque number <span className="font-normal text-danger">*</span>
+                  </label>
+                  <input
+                    id="payform-cheque"
+                    value={chequeNo}
+                    onChange={(e) => setChequeNo(e.target.value)}
+                    autoComplete="off"
+                    className="h-11 w-full rounded-sm border border-border bg-surface px-3.5 font-mono text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <label htmlFor="payform-cheque-date" className="block text-[13px] font-semibold">
+                    Cheque date
+                  </label>
+                  <input
+                    id="payform-cheque-date"
+                    type="date"
+                    value={chequeDate}
+                    onChange={(e) => setChequeDate(e.target.value)}
+                    className="h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                  <label htmlFor="payform-cheque-bank" className="block text-[13px] font-semibold">
+                    Bank
+                  </label>
+                  <input
+                    id="payform-cheque-bank"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    autoComplete="off"
+                    className="h-11 w-full rounded-sm border border-border bg-surface px-3.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+              ) : null}
+
               <label htmlFor="payform-reference" className="block text-[13px] font-semibold">
-                Reference <span className="font-normal text-muted">(optional — bank slip or cheque number)</span>
+                Reference <span className="font-normal text-muted">(optional note for the ledger)</span>
               </label>
               <input
                 id="payform-reference"
@@ -121,8 +240,34 @@ export function PayForm({
               />
             </div>
           ),
+          validate: () => {
+            if (method === "mpesa" && !mpesaCode.trim()) return "Enter the M-Pesa code from the confirmation SMS";
+            if (method === "bank" && !slipNo.trim()) return "Enter the bank slip number";
+            if (method === "cheque" && !chequeNo.trim()) return "Enter the cheque number";
+            return null;
+          },
           answers: [
             { label: "Method", value: method },
+            ...(method === "mpesa"
+              ? [
+                  { label: "M-Pesa code", value: mpesaCode || "—" },
+                  { label: "Phone used", value: mpesaPhone || "—" },
+                  { label: "Time received", value: mpesaTime || "—" },
+                ]
+              : []),
+            ...(method === "bank"
+              ? [
+                  { label: "Slip number", value: slipNo || "—" },
+                  { label: "Bank", value: bankName || "—" },
+                ]
+              : []),
+            ...(method === "cheque"
+              ? [
+                  { label: "Cheque number", value: chequeNo || "—" },
+                  { label: "Cheque date", value: chequeDate || "—" },
+                  { label: "Bank", value: bankName || "—" },
+                ]
+              : []),
             { label: "Reference", value: reference || "—" },
           ],
         },
@@ -135,12 +280,21 @@ export function PayForm({
               amountCents: Math.round(amountNum * 100),
               method,
               reference: reference || undefined,
+              details: details(),
+              paidAt: method === "mpesa" && mpesaTime ? new Date(mpesaTime).toISOString() : undefined,
             });
             if (res.ok) {
               const receipt = (res.data as { receipt_no?: string } | undefined)?.receipt_no;
               resolve(receipt ?? "Receipt issued");
               setAmount("");
               setReference("");
+              setMpesaCode("");
+              setMpesaPhone("");
+              setMpesaTime("");
+              setSlipNo("");
+              setBankName("");
+              setChequeNo("");
+              setChequeDate("");
             } else {
               resolve(null);
             }

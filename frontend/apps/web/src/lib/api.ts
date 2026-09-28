@@ -417,8 +417,12 @@ export async function markAttendanceAction(marks: { learnerId: string; mark: str
   return r;
 }
 
-export async function recordPaymentAction(input: { learnerId: string; amountCents: number; method: string; reference?: string }) {
-  return mutate("/web/money/payments", input);
+export async function recordPaymentAction(input: {
+  learnerId: string; amountCents: number; method: string; reference?: string; details?: PaymentDetails; paidAt?: string;
+}) {
+  const r = await mutate("/web/money/payments", input);
+  if (r.ok) revalidatePath("/app/money");
+  return r;
 }
 
 export async function createHomeworkAction(input: { classId: number; subject: string; title: string; body: string; dueOn?: string }) {
@@ -1059,9 +1063,58 @@ export async function getHomework() {
   return read<{ homework: HomeworkRow[] }>("/web/homework", { homework: [] });
 }
 
-export interface PaymentRow { receipt_no: string; learner: string; amount_cents: string; method: string; state: string; paid_at: string }
+export interface PaymentDetails {
+  mpesa_code?: string;
+  mpesa_phone?: string;
+  mpesa_time?: string;
+  slip_no?: string;
+  bank_name?: string;
+  cheque_no?: string;
+  cheque_date?: string;
+}
+export interface PaymentRow {
+  id: string;
+  receipt_no: string;
+  learner: string;
+  learner_id: string;
+  class_name: string | null;
+  amount_cents: string;
+  method: string;
+  state: string;
+  reference: string | null;
+  details: PaymentDetails | null;
+  paid_at: string;
+}
 export async function getPayments() {
   return read<{ payments: PaymentRow[] }>("/web/money/payments", { payments: [] });
+}
+export async function updatePaymentAction(input: {
+  paymentId: string;
+  amountCents?: number;
+  method?: string;
+  reference?: string | null;
+  details?: PaymentDetails;
+  paidAt?: string | null;
+}) {
+  const r = await mutate("/web/money/payments/update", input);
+  if (r.ok) revalidatePath("/app/money");
+  return r;
+}
+
+/** THE receipt print payload — what /web/print/receipt answers. */
+export interface PaymentReceiptData {
+  receipt_no: string;
+  learner: string;
+  admission_no: string | null;
+  class_name: string | null;
+  amount: string;
+  method: string;
+  state: string;
+  reference: string | null;
+  details: PaymentDetails | null;
+  paid_at: string;
+  recorded_by: string | null;
+  school: { name: string; contact_phone: string | null; contact_email: string | null; contact_address: string | null };
 }
 
 export interface CollectionRow { class: string; billed_cents: string; paid_cents: string }

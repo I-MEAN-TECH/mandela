@@ -68,6 +68,7 @@ export const SCHOOL_MIGRATIONS: MigrationFile[] = [
   { name: "045_broadcast_staff.sql", fullPath: SQL_PATHS.schoolBroadcastStaff },
   { name: "046_perf_indexes.sql", fullPath: SQL_PATHS.schoolPerfIndexes },
   { name: "047_role_pulse.sql", fullPath: SQL_PATHS.schoolRolePulse },
+  { name: "048_payment_details.sql", fullPath: SQL_PATHS.schoolPaymentDetails },
 ].map(load);
 
 export const CONTROL_MIGRATIONS: MigrationFile[] = [

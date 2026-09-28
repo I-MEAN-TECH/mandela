@@ -3,15 +3,7 @@ import { Card, CardHead, KpiCard, Meter, Money, StatusPill, DataTable, EmptyStat
 import { redirect } from "next/navigation";
 import { noun } from "@/lib/plural";
 import { PayForm } from "./PayForm";
-
-const ledgerColumns = [
-  { key: "receipt_no", title: "Receipt" },
-  { key: "learner", title: "Learner" },
-  { key: "amount", title: "Amount", align: "right" as const },
-  { key: "method", title: "Method" },
-  { key: "state", title: "State" },
-  { key: "paid_at", title: "Paid at" },
-];
+import { PaymentsLedger } from "./PaymentsLedger";
 
 /** Money — comp 03: billed/collected/outstanding, collections table, record + ledger. */
 export default async function MoneyPage() {
@@ -82,25 +74,11 @@ export default async function MoneyPage() {
           </Card>
         </div>
 
-        {/* Ledger */}
-        <Card>
-          <CardHead title="Recent payments" sub="The ledger — newest first" />
-          {payments.payments.length === 0 ? (
-            <EmptyState title="No payments yet" body="Confirmed payments appear here instantly." />
-          ) : (
-            <DataTable
-              columns={ledgerColumns}
-              rows={payments.payments.map((p) => ({
-                receipt_no: <span className="font-mono text-xs">{p.receipt_no}</span>,
-                learner: p.learner,
-                amount: <Money cents={p.amount_cents} />,
-                method: <span className="capitalize">{p.method}</span>,
-                state: <StatusPill tone={p.state === "confirmed" ? "ok" : p.state === "pending" ? "warn" : "danger"}>{p.state}</StatusPill>,
-                paid_at: new Date(p.paid_at).toLocaleString("en-KE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }),
-              }))}
-            />
-          )}
-        </Card>
+        {/* Ledger — every row: view, edit, print */}
+        <PaymentsLedger
+          payments={payments.payments}
+          canEdit={["admin", "bursar"].includes(me.principal.role ?? "")}
+        />
       </div>
     </div>
   );

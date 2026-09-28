@@ -895,11 +895,19 @@ export async function collectionByClass(dbName: string, principal: Extract<Princ
 
 export async function recentPayments(dbName: string, principal: Extract<Principal, { kind: "staff" }>, limit = 20) {
   return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
-    const r = await c.query<{ receipt_no: string; learner: string; amount_cents: string; method: string; state: string; paid_at: string }>(
-      `SELECT p.receipt_no,
-              l.first_name || ' ' || l.last_name AS learner,
-              p.amount::text AS amount_cents, p.method::text, p.state::text, p.paid_at::text
-       FROM payments p JOIN learner l ON l.id = p.learner_id
+    const r = await c.query<{
+      id: string; receipt_no: string; learner: string; learner_id: string; class_name: string | null;
+      amount_cents: string; method: string; state: string; reference: string | null;
+      details: Record<string, string> | null; paid_at: string;
+    }>(
+      `SELECT p.id::text, p.receipt_no,
+              l.first_name || ' ' || l.last_name AS learner, l.id::text AS learner_id,
+              cl.name AS class_name,
+              p.amount::text AS amount_cents, p.method::text, p.state::text,
+              p.reference, p.details, p.paid_at::text
+       FROM payments p
+       JOIN learner l ON l.id = p.learner_id
+       LEFT JOIN class cl ON cl.id = l.class_id
        ORDER BY p.paid_at DESC LIMIT $1`,
       [limit],
     );
@@ -907,20 +915,52 @@ export async function recentPayments(dbName: string, principal: Extract<Principa
   });
 }
 
+/** Method-specific payment details — validated once, stored as jsonb. */
+export interface PaymentDetails {
+  mpesa_code?: string;
+  mpesa_phone?: string;
+  mpesa_time?: string;
+  slip_no?: string;
+  bank_name?: string;
+  cheque_no?: string;
+  cheque_date?: string;
+}
+
+function normalizeDetails(method: string, raw?: PaymentDetails | null): { details: PaymentDetails | null; paidAtHint: string | null; error?: string } {
+  if (!raw) return { details: null, paidAtHint: null };
+  const clean: PaymentDetails = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof v === "string" && v.trim()) clean[k as keyof PaymentDetails] = v.trim().slice(0, 80);
+  }
+  if (method === "mpesa") {
+    if (!clean.mpesa_code) return { details: null, paidAtHint: null, error: "M-Pesa payments need the M-Pesa code" };
+    const t = clean.mpesa_time ?? null;
+    return { details: clean, paidAtHint: t ? t : null };
+  }
+  if (method === "bank" && !clean.slip_no) return { details: null, paidAtHint: null, error: "Bank payments need the slip number" };
+  if (method === "cheque" && !clean.cheque_no) return { details: null, paidAtHint: null, error: "Cheque payments need the cheque number" };
+  return { details: clean, paidAtHint: null };
+}
+
 export async function recordPayment(
   dbName: string,
   principal: Principal,
-  input: { learnerId: string; amountCents: number; method: string; reference?: string },
+  input: { learnerId: string; amountCents: number; method: string; reference?: string; details?: PaymentDetails; paidAt?: string },
 ) {
   const staff = principal.kind === "staff";
   const session = staff
     ? { userId: principal.userId, role: principal.role }
     : { userId: principal.guardianId, role: "guardian", guardianId: principal.guardianId };
+  const norm = normalizeDetails(input.method, input.details ?? null);
+  if (norm.error) throw new Error(norm.error);
   return withSession(dbName, session, async (c) => {
     const receipt = `R-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString("hex").toUpperCase()}`;
+    // M-Pesa money is recorded at the moment the SMS says it landed; other
+    // methods post now(). The receipt and ledger both show that truth.
+    const paidAt = input.paidAt ?? norm.paidAtHint ?? null;
     const r = await c.query<{ id: string; receipt_no: string }>(
-      `INSERT INTO payments (learner_id, amount, method, state, reference, receipt_no, recorded_by, paid_at)
-       VALUES ($1, $2, $3, 'confirmed', $4, $5, $6, now())
+      `INSERT INTO payments (learner_id, amount, method, state, reference, receipt_no, recorded_by, paid_at, details)
+       VALUES ($1, $2, $3, 'confirmed', $4, $5, $6, COALESCE($7::timestamptz, now()), $8)
        RETURNING id, receipt_no`,
       [
         input.learnerId,
@@ -929,6 +969,8 @@ export async function recordPayment(
         input.reference ?? null,
         receipt,
         staff ? principal.userId : null, // guardians pay too; recorded_by is staff-only
+        paidAt,
+        norm.details ? JSON.stringify(norm.details) : null,
       ],
     );
     await c.query(
@@ -937,6 +979,102 @@ export async function recordPayment(
       [staff ? principal.userId : principal.guardianId, staff ? "staff" : "guardian", r.rows[0]!.id, JSON.stringify(input)],
     );
     return r.rows[0]!;
+  });
+}
+
+/**
+ * Edit a recorded payment — method, amount, reference, method details, and
+ * the paid-at moment. Provided fields win; omitted fields keep the current
+ * value. Money is never silently wrong: every change lands in the audit
+ * log with before + after. RLS keeps writes to the money desk.
+ */
+export async function updatePayment(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+  paymentId: string,
+  input: { amountCents?: number; method?: string; reference?: string | null; details?: PaymentDetails; paidAt?: string | null },
+) {
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    const cur = await c.query<{
+      id: string; amount: string; method: string; reference: string | null; details: PaymentDetails | null; paid_at: string;
+    }>(`SELECT id::text, amount::text, method::text, reference, details, paid_at::text FROM payments WHERE id = $1`, [paymentId]);
+    if (!cur.rowCount) throw new Error("payment not found");
+    const before = cur.rows[0]!;
+    const method = input.method ?? before.method;
+    const norm = normalizeDetails(method, input.details ?? before.details ?? null);
+    if (norm.error) throw new Error(norm.error);
+    const r = await c.query<{ id: string; receipt_no: string }>(
+      `UPDATE payments SET
+         amount = COALESCE($2, amount),
+         method = $3,
+         reference = COALESCE($4, reference),
+         details = COALESCE($5, details),
+         paid_at = COALESCE($6::timestamptz, paid_at)
+       WHERE id = $1
+       RETURNING id::text, receipt_no`,
+      [
+        paymentId,
+        input.amountCents ?? null,
+        method,
+        input.reference !== undefined ? input.reference : null, // explicit clear allowed
+        norm.details ? JSON.stringify(norm.details) : null,
+        input.paidAt !== undefined ? input.paidAt : null,
+      ],
+    );
+    await c.query(
+      `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, before, after)
+       VALUES ($1, 'staff', 'payment.update', 'payments', $2, $3, $4)`,
+      [principal.userId, paymentId, JSON.stringify(before), JSON.stringify(input)],
+    );
+    return r.rows[0]!;
+  });
+}
+
+/** THE receipt payload — one payment, the school letterhead, the learner. */
+export async function paymentReceipt(
+  dbName: string,
+  principal: Principal,
+  receiptNo: string,
+): Promise<PaymentReceipt | { error: string }> {
+  const staff = principal.kind === "staff";
+  const session = staff
+    ? { userId: principal.userId, role: principal.role }
+    : { userId: principal.guardianId, role: "guardian", guardianId: principal.guardianId };
+  return withSession(dbName, session, async (c) => {
+    const r = await c.query<{
+      receipt_no: string; learner: string; admission_no: string | null; class_name: string | null;
+      amount: string; method: string; state: string; reference: string | null;
+      details: PaymentDetails | null; paid_at: string; recorded_by: string | null;
+    }>(
+      `SELECT p.receipt_no, l.first_name || ' ' || l.last_name AS learner, l.admission_no,
+              cl.name AS class_name, p.amount::text, p.method::text, p.state::text,
+              p.reference, p.details, p.paid_at::text, s.full_name AS recorded_by
+       FROM payments p
+       JOIN learner l ON l.id = p.learner_id
+       LEFT JOIN class cl ON cl.id = l.class_id
+       LEFT JOIN staff s ON s.id = p.recorded_by
+       WHERE p.receipt_no = $1`,
+      [receiptNo],
+    );
+    if (!r.rowCount) return { error: "receipt not found" };
+    const school = await c.query<{ name: string; contact_phone: string | null; contact_email: string | null; contact_address: string | null }>(
+      `SELECT name, contact_phone, contact_email, contact_address FROM school_settings WHERE id = 'default'`,
+    );
+    const row = r.rows[0]!;
+    return {
+      receipt_no: row.receipt_no,
+      learner: row.learner,
+      admission_no: row.admission_no,
+      class_name: row.class_name,
+      amount: row.amount,
+      method: row.method,
+      state: row.state,
+      reference: row.reference,
+      details: row.details,
+      paid_at: row.paid_at,
+      recorded_by: row.recorded_by,
+      school: school.rows[0] ?? { name: "", contact_phone: null, contact_email: null, contact_address: null },
+    };
   });
 }
 
@@ -6109,6 +6247,21 @@ export async function setFeatureFlag(
 // Print artifacts: the documents a parent holds. One renderer payload each,
 // one query each, no new tables — the print view is a lens, not a source.
 // ---------------------------------------------------------------------------
+
+export interface PaymentReceipt {
+  receipt_no: string;
+  learner: string;
+  admission_no: string | null;
+  class_name: string | null;
+  amount: string;
+  method: string;
+  state: string;
+  reference: string | null;
+  details: PaymentDetails | null;
+  paid_at: string;
+  recorded_by: string | null;
+  school: { name: string; contact_phone: string | null; contact_email: string | null; contact_address: string | null };
+}
 
 export interface ReportCardPrint {
   card_id: string;

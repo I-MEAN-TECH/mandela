@@ -45,9 +45,12 @@ export function Wizard({ steps, onConfirm, doneTitle, doneHint, renderDoneAction
   const [busy, setBusy] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
+  // The check-answers screen comes AFTER every content step — a separate
+  // index, not the last content step's slot (which used to swallow the final
+  // step's content when a wizard had 3+ steps).
   const last = steps.length - 1;
+  const isCheck = index > last;
   const step = steps[Math.min(index, last)]!;
-  const isCheck = index === last;
 
   const focusHeading = () => {
     requestAnimationFrame(() => headingRef.current?.focus());
@@ -70,7 +73,7 @@ export function Wizard({ steps, onConfirm, doneTitle, doneHint, renderDoneAction
   return (
     <div>
       {/* Progress strip — the user always knows where they are */}
-      <ol className="flex flex-wrap items-center gap-2" aria-label={`Step ${index + 1} of ${steps.length + 1}`}>
+      <ol className="flex flex-wrap items-center gap-2" aria-label={`Step ${Math.min(index + 1, steps.length + 1)} of ${steps.length + 1}`}>
         {steps.map((s, i) => (
           <li key={s.title} className="flex items-center gap-2">
             <span

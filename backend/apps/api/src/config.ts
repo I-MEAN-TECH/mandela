@@ -60,6 +60,7 @@ export const SQL_PATHS = {
   schoolBroadcastStaff: path.join(BACKEND_ROOT, "db", "school", "045_broadcast_staff.sql"),
   schoolPerfIndexes: path.join(BACKEND_ROOT, "db", "school", "046_perf_indexes.sql"),
   schoolRolePulse: path.join(BACKEND_ROOT, "db", "school", "047_role_pulse.sql"),
+  schoolPaymentDetails: path.join(BACKEND_ROOT, "db", "school", "048_payment_details.sql"),
 } as const;
 
 const envSchema = z.object({
