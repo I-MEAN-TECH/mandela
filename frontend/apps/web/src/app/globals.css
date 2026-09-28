@@ -243,18 +243,28 @@ body {
   }
 }
 
-/* /print/* document routes (report card, fee statement): the page IS the
-   document — nothing to isolate, just A4 margins and no shadows. */
+/* /print/* document routes (report card, fee statement, receipt): the page
+   IS the document — print ONLY the sheet. Everything else hides; the sheet
+   stays in flow (position:fixed would clip multi-page docs to one page). */
 @media print {
-  body:has([data-doc]) * {
+  body * {
+    visibility: hidden;
+  }
+  [data-doc],
+  [data-doc] * {
     visibility: visible;
   }
   [data-doc] {
     max-width: none;
     padding: 0;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+    border-radius: 0;
   }
-  [data-doc] .print\:hidden {
-    display: none;
+  [data-doc] .print\:hidden,
+  .print\:hidden {
+    display: none !important;
   }
 }
 

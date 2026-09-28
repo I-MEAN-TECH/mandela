@@ -25,7 +25,7 @@ export function ReceiptDoc({ data }: { data: ReceiptPayload }) {
           : [["Received in", "Cash at the school office"]];
 
   return (
-    <main className="mx-auto max-w-[720px] bg-white px-8 py-10 text-ink-950">
+    <main data-doc className="mx-auto max-w-[720px] bg-white px-8 py-10 text-ink-950">
       <header className="border-b-2 border-ink-950 pb-4 text-center">
         <h1 className="font-display text-2xl font-bold uppercase tracking-wide">{school.name}</h1>
         {contacts ? <p className="mt-1 text-[12px] text-ink-500">{contacts}</p> : null}
