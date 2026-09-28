@@ -13,13 +13,16 @@ const methodLabel: Record<string, string> = {
  * app reads). Paper is white; money keeps its own ink, never lime.
  */
 export function StatementDoc({ data }: { data: LearnerTermStatement }) {
-  const contacts = [data.school.contact_address, data.school.contact_phone, data.school.contact_email].filter(Boolean).join(" · ");
-  const issued = new Date(data.issued_on).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
+  // school_settings may be unconfigured (fresh school) — degrade to the name,
+  // never crash the document.
+  const school = data.school ?? { name: "", contact_phone: null, contact_email: null, contact_address: null };
+  const contacts = [school.contact_address, school.contact_phone, school.contact_email].filter(Boolean).join(" · ");
+  const issued = data.issued_on ? new Date(data.issued_on).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" }) : "";
 
   return (
     <div data-doc className="mx-auto max-w-[780px] bg-surface px-10 py-8">
       <header className="border-b-2 border-pine-700 pb-4">
-        <p className="font-display text-[22px] font-bold tracking-tight text-pine-800">{data.school.name}</p>
+        <p className="font-display text-[22px] font-bold tracking-tight text-pine-800">{school.name}</p>
         {contacts ? <p className="mt-1 text-[11.5px] text-ink-500">{contacts}</p> : null}
       </header>
 

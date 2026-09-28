@@ -1828,6 +1828,11 @@ export async function learnerTermStatement(
   learnerId: string,
   termId: number,
 ): Promise<LearnerTermStatement | { error: string }> {
+  // Guard the UUID boundary BEFORE Postgres sees the value: a junk id in the
+  // URL must answer "learner not found", never a raw 500 pg type error.
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(learnerId)) {
+    return { error: "learner not found" };
+  }
   return withSession(dbName, session, async (c) => {
     // Guardians may only ever see their own children — enforced here AND by RLS.
     if (session.role === "guardian") {
@@ -6105,6 +6110,12 @@ export async function reportCardPrint(
   session: { userId: string; role: string; guardianId?: string },
   lookup: { cardId?: string; learnerId?: string },
 ): Promise<ReportCardPrint | { error: string }> {
+  // Guard the UUID boundary BEFORE Postgres sees the value: a junk id in the
+  // URL must answer "card not found", never a raw 500 pg type error.
+  const id = lookup.cardId ?? lookup.learnerId ?? "";
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return { error: "card not found" };
+  }
   return withSession(dbName, session, async (c) => {
     const isGuardian = session.role === "guardian";
     const card = await c.query<{

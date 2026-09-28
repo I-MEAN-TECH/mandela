@@ -23,14 +23,17 @@ export function ReportCardDoc({ card }: { card: ReportCardPrint }) {
   const rows = payload.rows ?? [];
   const att = payload.attendance ?? { present: 0, total: 0 };
   const attPct = att.total === 0 ? 0 : Math.round((att.present / att.total) * 100);
-  const contacts = [card.school.contact_address, card.school.contact_phone, card.school.contact_email].filter(Boolean).join(" · ");
-  const issued = new Date(card.generated_on).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" });
+  // school_settings may be unconfigured (fresh school) — the letterhead degrades
+  // to the name alone instead of crashing the document.
+  const school = card.school ?? { name: "", contact_phone: null, contact_email: null, contact_address: null };
+  const contacts = [school.contact_address, school.contact_phone, school.contact_email].filter(Boolean).join(" · ");
+  const issued = card.generated_on ? new Date(card.generated_on).toLocaleDateString("en-KE", { day: "numeric", month: "long", year: "numeric" }) : "";
 
   return (
     <div data-doc className="mx-auto max-w-[780px] bg-surface px-10 py-8">
       {/* Letterhead — school_settings is the only source */}
       <header className="border-b-2 border-pine-700 pb-4">
-        <p className="font-display text-[22px] font-bold tracking-tight text-pine-800">{card.school.name}</p>
+        <p className="font-display text-[22px] font-bold tracking-tight text-pine-800">{school.name}</p>
         {contacts ? <p className="mt-1 text-[11.5px] text-ink-500">{contacts}</p> : null}
       </header>
 
