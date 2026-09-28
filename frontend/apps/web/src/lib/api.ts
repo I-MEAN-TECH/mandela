@@ -1184,6 +1184,7 @@ export interface ExamCoverageData {
   classes: { class_id: number; class_name: string; curriculum: string; learners: number; assessed: number; coveragePct: number }[];
   overallPct: number;
   pendingApprovals: { card_id: string; learner: string; class_name: string | null; term: string; state: string }[];
+  recentCards: { card_id: string; learner: string; class_name: string | null; term: string; state: string; created_at: string }[];
 }
 export async function getExamCoverage() {
   return read<ExamCoverageData | { error: string }>("/web/admin/exam-coverage", { error: "unavailable" });

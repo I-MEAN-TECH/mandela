@@ -1405,7 +1405,9 @@ export class WebController {
     const tenant = await tenantFromReq(req);
     const principal = principalFromReq(req);
     if (!principal || principal.kind !== "staff") return { error: "staff session required" };
-    if (!["admin", "principal"].includes(principal.role ?? "")) return { error: "leadership view" };
+    // Teachers run their own classes' card desk (draft + manage); the query
+    // scopes them to the classes on their timetable. Approval is separate.
+    if (!["admin", "principal", "teacher"].includes(principal.role ?? "")) return { error: "leadership view" };
     return web.examCoverage(tenant.dbName, principal);
   }
 

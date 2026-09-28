@@ -4215,6 +4215,7 @@ export interface ExamCoverage {
   classes: { class_id: number; class_name: string; curriculum: string; learners: number; assessed: number; coveragePct: number }[];
   overallPct: number;
   pendingApprovals: { card_id: string; learner: string; class_name: string | null; term: string; state: string }[];
+  recentCards: { card_id: string; learner: string; class_name: string | null; term: string; state: string; created_at: string }[];
 }
 
 export async function examCoverage(
@@ -4225,6 +4226,15 @@ export async function examCoverage(
     const term = await c.query<{ id: number; label: string }>(`SELECT id, label FROM term ORDER BY starts_on DESC LIMIT 1`);
     if (!term.rowCount) throw new Error("no term exists");
     const termId = term.rows[0]!.id;
+    // Teachers get the desk scoped to the classes they teach (timetable is the
+    // source of truth); everyone else sees the whole school. A teacher with no
+    // slots yet sees everything rather than an empty desk.
+    const taught =
+      principal.role === "teacher"
+        ? await c.query<{ class_id: number }>(`SELECT DISTINCT class_id FROM timetable_slot WHERE teacher_id = $1`, [principal.userId])
+        : { rows: [] as { class_id: number }[] };
+    const taughtIds = taught.rows.map((r) => r.class_id);
+    const scoped = principal.role === "teacher" && taughtIds.length > 0;
     const rows = await c.query<{
       class_id: number; class_name: string; curriculum: string; learners: string; assessed: string;
     }>(
@@ -4236,20 +4246,37 @@ export async function examCoverage(
        FROM class cl
        LEFT JOIN curriculum_level lvl ON lvl.id = cl.level_id
        LEFT JOIN curriculum cur ON cur.id = lvl.curriculum_id
+       ${scoped ? `WHERE cl.id = ANY($2)` : ""}
        ORDER BY cl.name`,
-      [termId],
+      scoped ? [termId, taughtIds] : [termId],
     );
     const pending = await c.query<{
       card_id: string; learner: string; class_name: string | null; term: string; state: string;
     }>(
-      `SELECT rc.id::text, l.first_name || ' ' || l.last_name AS learner, cl.name AS class_name,
+      `SELECT rc.id::text AS card_id, l.first_name || ' ' || l.last_name AS learner, cl.name AS class_name,
               t.label AS term, rc.state::text
        FROM report_card rc
        JOIN learner l ON l.id = rc.learner_id
        LEFT JOIN class cl ON cl.id = rc.class_id
        JOIN term t ON t.id = rc.term_id
-       WHERE rc.state = 'draft'
+       WHERE rc.state = 'draft'${scoped ? ` AND rc.class_id = ANY($1)` : ""}
        ORDER BY rc.created_at DESC LIMIT 30`,
+      scoped ? [taughtIds] : [],
+    );
+    // The manageable desk: recent cards in every state, so staff can find a
+    // learner's card and filter by class — not just watch the draft queue.
+    const recent = await c.query<{
+      card_id: string; learner: string; class_name: string | null; term: string; state: string; created_at: string;
+    }>(
+      `SELECT rc.id::text AS card_id, l.first_name || ' ' || l.last_name AS learner, cl.name AS class_name,
+              t.label AS term, rc.state::text AS state, rc.created_at::text AS created_at
+       FROM report_card rc
+       JOIN learner l ON l.id = rc.learner_id
+       LEFT JOIN class cl ON cl.id = rc.class_id
+       JOIN term t ON t.id = rc.term_id
+       ${scoped ? `WHERE rc.class_id = ANY($1)` : ""}
+       ORDER BY rc.created_at DESC LIMIT 60`,
+      scoped ? [taughtIds] : [],
     );
     const classes = rows.rows.map((r) => ({
       class_id: r.class_id, class_name: r.class_name, curriculum: r.curriculum,
@@ -4262,6 +4289,7 @@ export async function examCoverage(
       classes,
       overallPct: totalL === 0 ? 0 : Math.round((totalA / totalL) * 100),
       pendingApprovals: pending.rows,
+      recentCards: recent.rows,
     };
   });
 }

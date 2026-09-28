@@ -162,6 +162,95 @@ export function GenerateCard({ learners }: { learners: { id: string; name: strin
   );
 }
 
+/**
+ * The manageable card desk: every recent card (draft, approved, issued),
+ * filterable by class, learner, and state — find a learner's card and open
+ * its print view without waiting on the approval queue.
+ */
+export function CardDesk({ cards }: { cards: ExamCoverageData["recentCards"] }) {
+  const [cls, setCls] = useState("");
+  const [state, setState] = useState("");
+  const [q, setQ] = useState("");
+
+  const classNames = [...new Set(cards.map((c) => c.class_name).filter((n): n is string => !!n))];
+  const filtered = cards.filter(
+    (c) =>
+      (!cls || c.class_name === cls) &&
+      (!state || c.state === state) &&
+      (!q || c.learner.toLowerCase().includes(q.toLowerCase())),
+  );
+
+  return (
+    <Card>
+      <CardHead
+        title="All report cards"
+        sub="Every recent card — filter by class, learner, or state; open the print view from here."
+      />
+      {cards.length === 0 ? (
+        <p className="py-4 text-[13px] text-ink-500">No cards yet — generate the first one on the right.</p>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2 pb-2">
+            <select
+              aria-label="Filter by class"
+              value={cls}
+              onChange={(e) => setCls(e.target.value)}
+              className="h-9 rounded-sm border border-paper-300 bg-surface px-2.5 text-[12.5px] text-ink-950"
+            >
+              <option value="">All classes</option>
+              {classNames.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+            <select
+              aria-label="Filter by state"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              className="h-9 rounded-sm border border-paper-300 bg-surface px-2.5 text-[12.5px] text-ink-950"
+            >
+              <option value="">All states</option>
+              <option value="draft">draft</option>
+              <option value="approved">approved</option>
+              <option value="issued">issued</option>
+            </select>
+            <input
+              type="search"
+              aria-label="Search learner"
+              placeholder="Search learner…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="h-9 min-w-[160px] flex-1 rounded-sm border border-paper-300 bg-surface px-3 text-[12.5px] text-ink-950 placeholder:text-ink-400"
+            />
+            <span className="numeral text-[11.5px] text-ink-500">{filtered.length} of {cards.length}</span>
+          </div>
+          <div className="flex max-h-[420px] flex-col divide-y divide-paper-200 overflow-y-auto">
+            {filtered.map((c) => (
+              <div key={c.card_id} className="flex flex-wrap items-center gap-3 py-2.5">
+                <div className="min-w-[150px] flex-1">
+                  <p className="text-[13.5px] font-semibold text-ink-950">{c.learner}</p>
+                  <p className="text-[12px] text-ink-500">{c.class_name ?? "—"} · {c.term}</p>
+                </div>
+                <StatusPill tone={c.state === "issued" || c.state === "approved" ? "ok" : "warn"}>{c.state}</StatusPill>
+                <a
+                  href={`/print/report-card?cardId=${c.card_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[12px] font-semibold text-pine-700 underline decoration-paper-300 underline-offset-2 hover:decoration-pine-700"
+                >
+                  Print preview
+                </a>
+              </div>
+            ))}
+            {filtered.length === 0 ? (
+              <p className="py-4 text-[13px] text-ink-500">No cards match those filters.</p>
+            ) : null}
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
+
 /** The adaptive renderer — vocabulary + scale read from the card payload. */
 export function ReportCardView({ card }: {
   card: {

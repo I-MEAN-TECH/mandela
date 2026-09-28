@@ -103,6 +103,33 @@ export function TeacherToday({ p }: { p: TeacherPulseData }) {
         </Card>
       ) : null}
 
+      {/* The teacher's other accesses, one tap away — report-card desk included. */}
+      <Card>
+        <CardHead title="Your tools" sub="Everything the school has given this teacher access to" />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {[
+            { href: "/app/mark", label: "Mark attendance", hint: "Today's roll" },
+            { href: "/app/homework", label: "Set homework", hint: "Due this week" },
+            { href: "/app/class", label: "My class", hint: "Roster + marks" },
+            { href: "/app/academics/exams", label: "Report cards", hint: "Draft & manage" },
+            { href: "/app/messages", label: "Messages", hint: "Parents & staff" },
+            { href: "/app/insights", label: "Insights", hint: "School trends" },
+            { href: "/app/academics/timetable", label: "Timetable", hint: "Period grid" },
+            { href: "/app/operations/events", label: "Events", hint: "Calendar" },
+            { href: "/app/people/conduct", label: "Conduct", hint: "Merits & demerits" },
+          ].map((t) => (
+            <Link
+              key={t.href}
+              href={t.href}
+              className="group rounded-sm border border-border bg-paper-50 px-s3 py-s2.5 transition-colors hover:border-primary hover:bg-surface"
+            >
+              <span className="block text-[13px] font-semibold text-ink-950 group-hover:text-primary">{t.label}</span>
+              <span className="block text-[11.5px] text-muted">{t.hint}</span>
+            </Link>
+          ))}
+        </div>
+      </Card>
+
       {p.duty_today.length > 0 ? (
         <Card>
           <CardHead title="My duty today" />
