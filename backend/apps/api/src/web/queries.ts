@@ -168,15 +168,15 @@ export interface Bootstrap {
 const DEFAULT_NAV: Record<string, string[]> = {
   admin: ["Today", "Money", "Spend", "People", "Academics", "Operations", "Care", "Insights", "Settings"],
   bursar: ["Today", "Collect", "Reconcile", "Levies", "Reports"],
-  driver: ["Today", "Transport", "Directory"],
+  driver: ["Today", "Transport"],
   parent: ["Home", "Pay", "Homework", "Messages", "Profile"],
-  counter: ["Today", "Visitors", "Inquiries", "Directory", "Calendar"],
+  counter: ["Today", "Visitors", "Inquiries", "Directory"],
   teacher: ["Today", "Mark", "Homework", "Messages", "Class"],
   principal: ["Today", "Operations", "Approve", "Reports", "Broadcast", "Directory", "Academics"],
-  dorm_parent: ["Today", "Hostel", "Laundry", "Care", "Directory"],
-  janitor: ["Today", "Facilities", "Store", "Operations", "Directory"],
-  librarian: ["Today", "Library", "Academics", "Directory", "Insights"],
-  patron: ["Today", "Sections", "Houses", "Events", "Directory"],
+  dorm_parent: ["Today", "Hostel", "Laundry"],
+  janitor: ["Today", "Facilities", "Store"],
+  librarian: ["Today", "Library", "Directory"],
+  patron: ["Today", "Sections", "Houses", "Events"],
   hod: ["Today", "Academics", "Exams", "People", "Insights"],
 };
 
