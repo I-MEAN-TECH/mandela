@@ -1533,7 +1533,7 @@ export class WebController {
     const input = z
       .object({
         moduleKey: z.string().min(1).max(40),
-        role: z.enum(["admin", "principal", "teacher", "bursar", "counter", "driver"]),
+        role: z.enum(["admin", "principal", "teacher", "bursar", "counter", "driver", "dorm_parent", "janitor", "librarian", "patron", "hod"]),
         owns: z.boolean().optional(),
         sees: z.boolean().optional(),
         landing: z.boolean().optional(),

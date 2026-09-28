@@ -159,6 +159,39 @@ export interface Bootstrap {
   theme: Record<string, string>;
 }
 
+/**
+ * Role-default sidebars (the calm-IA law: every role lands with a coherent
+ * set of modules). perm_matrix 'sees' grants are MERGED on top — the admin
+ * can only ADD modules to a role's sidebar from Settings, never break the
+ * defaults, because the defaults are the product floor.
+ */
+const DEFAULT_NAV: Record<string, string[]> = {
+  admin: ["Today", "Money", "Spend", "People", "Academics", "Operations", "Care", "Insights", "Settings"],
+  bursar: ["Today", "Collect", "Reconcile", "Levies", "Reports"],
+  driver: ["Today", "Transport", "Directory"],
+  parent: ["Home", "Pay", "Homework", "Messages", "Profile"],
+  counter: ["Today", "Visitors", "Inquiries", "Directory", "Calendar"],
+  teacher: ["Today", "Mark", "Homework", "Messages", "Class"],
+  principal: ["Today", "Operations", "Approve", "Reports", "Broadcast", "Directory", "Academics"],
+  dorm_parent: ["Today", "Hostel", "Laundry", "Care", "Directory"],
+  janitor: ["Today", "Facilities", "Store", "Operations", "Directory"],
+  librarian: ["Today", "Library", "Academics", "Directory", "Insights"],
+  patron: ["Today", "Sections", "Houses", "Events", "Directory"],
+  hod: ["Today", "Academics", "Exams", "People", "Insights"],
+};
+
+/** perm_matrix module_key → the sidebar tab it unlocks (nav labels come from
+ * NAV_CHILDREN mapping; a grant adds the tab if the role lacks it). */
+const MODULE_TAB: Record<string, string> = {
+  today: "Today",
+  money: "Money",
+  academics: "Academics",
+  operations: "Operations",
+  people: "People",
+  insights: "Insights",
+  settings: "Settings",
+};
+
 const DEFAULT_PRIME: Record<string, string> = {
   parent: "What do I owe, and what's happening today?",
   teacher: "Who's here, who's not, and what's due?",
@@ -181,6 +214,23 @@ const DEFAULT_PRIME: Record<string, string> = {
  */
 export async function getBootstrap(dbName: string): Promise<Bootstrap> {
   const db = getSchoolPool(dbName);
+  // Nav per role: role defaults merged with perm_matrix 'sees' grants (the
+  // admin's Settings → Permissions matrix can only ADD tabs; defaults hold).
+  const grants = await db
+    .query<{ role: string; module_key: string }>(
+      `SELECT role::text AS role, module_key FROM perm_matrix WHERE sees`,
+    )
+    .catch(() => ({ rows: [] as { role: string; module_key: string }[] }));
+  const nav: Record<string, string[]> = {};
+  for (const [role, tabs] of Object.entries(DEFAULT_NAV)) {
+    const merged = [...tabs];
+    for (const g of grants.rows) {
+      if (g.role !== role) continue;
+      const tab = MODULE_TAB[g.module_key];
+      if (tab && !merged.includes(tab)) merged.push(tab);
+    }
+    nav[role] = merged;
+  }
   const s = await db.query<{
     name: string; tagline: string | null; motto: string | null;
     logo_svg_path: string | null; logo_aspect: string;
@@ -215,7 +265,7 @@ export async function getBootstrap(dbName: string): Promise<Bootstrap> {
       quote_author: row.quote_author,
     },
     modules: (row.modules_json as { title: string; body: string }[] | null) ?? [],
-    nav: (row.nav_json as Record<string, string[]> | null) ?? {},
+    nav: Object.keys(nav).length > 0 ? nav : ((row.nav_json as Record<string, string[]> | null) ?? {}),
     prime_questions: DEFAULT_PRIME,
     theme: (row.theme_json as Record<string, string> | null) ?? {},
   };

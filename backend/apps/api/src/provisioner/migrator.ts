@@ -72,6 +72,7 @@ export const SCHOOL_MIGRATIONS: MigrationFile[] = [
   { name: "049_wave2_visibility.sql", fullPath: SQL_PATHS.schoolWave2Visibility },
   { name: "050_driver_transport_read.sql", fullPath: SQL_PATHS.schoolDriverTransportRead },
   { name: "051_pulse_cross_role_reads.sql", fullPath: SQL_PATHS.schoolPulseCrossRoleReads },
+  { name: "052_perm_matrix_grants.sql", fullPath: SQL_PATHS.schoolPermMatrixGrants },
 ].map(load);
 
 export const CONTROL_MIGRATIONS: MigrationFile[] = [
