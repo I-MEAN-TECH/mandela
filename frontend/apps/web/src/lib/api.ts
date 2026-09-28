@@ -7,6 +7,7 @@
  */
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 const API_URL = process.env.MANDELA_API_URL ?? "http://localhost:4000";
 const COOKIE = "mandela_session";
@@ -409,7 +410,11 @@ async function mutate(path: string, payload: unknown): Promise<{ ok: boolean; er
 }
 
 export async function markAttendanceAction(marks: { learnerId: string; mark: string }[]) {
-  return mutate("/web/attendance", { marks });
+  const r = await mutate("/web/attendance", { marks });
+  // Marks change the teacher's gate ("Today IS the mark screen") and the
+  // pulse numbers — revalidate so the dashboard flips live after saving.
+  if (r.ok) revalidatePath("/app");
+  return r;
 }
 
 export async function recordPaymentAction(input: { learnerId: string; amountCents: number; method: string; reference?: string }) {

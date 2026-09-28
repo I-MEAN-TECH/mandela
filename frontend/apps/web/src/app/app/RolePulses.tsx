@@ -63,8 +63,8 @@ function NoticeCard({ n, storageKey }: { n: { title: string; body: string; creat
 /* ============================ TEACHER — §6.3 ============================ */
 
 export function TeacherToday({ p }: { p: TeacherPulseData }) {
-  // First-run (no marks yet today) never reaches this component: the page
-  // renders ONLY the mark roster — nothing may precede activation (§6.3).
+  // First-run (no marks yet today) reaches this too — beneath the mark
+  // roster — where present/expected reads "0/0 · not marked" honestly.
   const pct = p.expected > 0 ? Math.round((p.present / p.expected) * 100) : null;
   return (
     <div className="grid gap-s5">

@@ -58,8 +58,9 @@ export default async function AppHome() {
     ["teacher", "bursar", "counter", "driver", "dorm_parent", "janitor", "librarian", "patron", "hod"].includes(role ?? "");
   const isPrincipalRole = !isGuardian && role === "principal";
 
-  // Teacher first-run (§6.3): if nothing is marked today, Today IS the mark
-  // screen — the roster replaces the whole dashboard, nothing precedes it.
+  // Teacher first-run (§6.3): marking leads — the roster IS the first thing
+  // on the page — but the day's dashboard renders beneath it, so the KPIs and
+  // charts are visible before the roll is marked too (never a blank screen).
   if (role === "teacher") {
     const tp = await getTeacherPulse();
     if ("error" in (tp as { error?: string })) {
@@ -77,11 +78,14 @@ export default async function AppHome() {
             sub={cls ? `Mark ${cls.name} — two taps per learner, saved to the roll.` : "Two taps per learner — the roster and today's marks come straight from the school database."}
             actions={<AppLiveBar />}
           />
-          <div className="mt-s7">
+          <div className="mt-s7 grid gap-s5">
             <Card>
               <CardHead title="Today's roster" sub="Present · Late · Absent · Excused" />
               {roster.length === 0 ? <EmptyState title="No learners" body="This class has no active learners yet." /> : <MarkButtons roster={roster} action={markAttendanceAction} />}
             </Card>
+            <Reveal delay={60}>
+              <TeacherToday p={tp as TeacherPulseData} />
+            </Reveal>
           </div>
         </div>
       );
