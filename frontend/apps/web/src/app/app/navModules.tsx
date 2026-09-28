@@ -29,16 +29,13 @@ export interface NavChild {
 export const NAV_CHILDREN: Record<string, NavChild[]> = {
   Money: [
     { label: "Collect Cashier", href: "/app/money" },
-    { label: "Confirm & Rails", href: "/app/reconcile" },
-    { label: "Levies", href: "/app/levies" },
     { label: "Fee Structures", href: "/app/money/fees" },
+    { label: "Levies", href: "/app/levies" },
     { label: "Invoices & Statements", href: "/app/money/invoices" },
     { label: "Fee Reports", href: "/app/reports" },
   ],
   Collect: [
     { label: "Record Payment", href: "/app/money" },
-    { label: "Levies", href: "/app/levies" },
-    { label: "Fee Structures", href: "/app/money/fees" },
     { label: "Invoices & Statements", href: "/app/money/invoices" },
   ],
   Reconcile: [
