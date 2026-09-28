@@ -34,6 +34,17 @@ export const NAV_CHILDREN: Record<string, NavChild[]> = {
     { label: "Invoices & Statements", href: "/app/money/invoices" },
     { label: "Fee Reports", href: "/app/reports" },
   ],
+  Collect: [
+    { label: "Record Payment", href: "/app/money" },
+    { label: "Fees & Levies", href: "/app/money/fees" },
+    { label: "Invoices & Statements", href: "/app/money/invoices" },
+  ],
+  Reconcile: [
+    { label: "Pending Confirmations", href: "/app/reconcile" },
+  ],
+  Reports: [
+    { label: "Collection Reports", href: "/app/reports" },
+  ],
   Spend: [
     { label: "Payroll", href: "/app/people/payroll" },
     { label: "Petty Cash & Budgets", href: "/app/money/petty" },
@@ -82,6 +93,50 @@ export const NAV_CHILDREN: Record<string, NavChild[]> = {
     { label: "Board & BOM", href: "/app/settings/board" },
     { label: "Flags & Integrations", href: "/app/settings/flags" },
   ],
+  Mark: [
+    { label: "Attendance Roster", href: "/app/mark" },
+    { label: "My Class Learners", href: "/app/class" },
+  ],
+  Homework: [
+    { label: "Homework List", href: "/app/homework" },
+  ],
+  Hostel: [
+    { label: "Dorm Allocations", href: "/app/operations/hostel" },
+    { label: "Laundry Custody", href: "/app/laundry" },
+  ],
+  Laundry: [
+    { label: "Garment Handover", href: "/app/laundry" },
+  ],
+  Facilities: [
+    { label: "Repairs Queue", href: "/app/operations/facilities" },
+    { label: "Store Supplies", href: "/app/operations/store" },
+  ],
+  Store: [
+    { label: "Store Inventory", href: "/app/operations/store" },
+  ],
+  Library: [
+    { label: "Book Catalogue", href: "/app/operations/library" },
+  ],
+  Transport: [
+    { label: "Route & Manifest", href: "/app/operations/transport" },
+  ],
+  Visitors: [
+    { label: "Visitors & Passes", href: "/app/operations/security" },
+  ],
+  Inquiries: [
+    { label: "Admissions Funnel", href: "/app/people/admissions" },
+  ],
+  Sections: [
+    { label: "Sections & Patrons", href: "/app/operations/sections" },
+    { label: "Houses & Points", href: "/app/operations/houses" },
+  ],
+  Exams: [
+    { label: "Exam Entries & Report Cards", href: "/app/academics/exams" },
+  ],
+  Directory: [
+    { label: "Staff Directory", href: "/app/directory" },
+    { label: "Learners List", href: "/app/people/learners" },
+  ],
 };
 
 /** Sub-module icons — real glyphs (lucide), one per child row. */
@@ -91,6 +146,10 @@ export const CHILD_ICONS: Record<string, ReactNode> = {
   "Fees, Levies & Pocket": <ClipboardList size={13} strokeWidth={2} aria-hidden />,
   "Invoices & Statements": <Receipt size={13} strokeWidth={2} aria-hidden />,
   "Fee Reports": <FileText size={13} strokeWidth={2} aria-hidden />,
+  "Record Payment": <Landmark size={13} strokeWidth={2} aria-hidden />,
+  "Fees & Levies": <ClipboardList size={13} strokeWidth={2} aria-hidden />,
+  "Pending Confirmations": <ArrowLeftRight size={13} strokeWidth={2} aria-hidden />,
+  "Collection Reports": <FileText size={13} strokeWidth={2} aria-hidden />,
   Payroll: <HandCoins size={13} strokeWidth={2} aria-hidden />,
   "Petty Cash & Budgets": <Wallet size={13} strokeWidth={2} aria-hidden />,
   "Purchases & Suppliers": <Package size={13} strokeWidth={2} aria-hidden />,
@@ -124,6 +183,23 @@ export const CHILD_ICONS: Record<string, ReactNode> = {
   "Users & Duties": <UsersRound size={13} strokeWidth={2} aria-hidden />,
   "Board & BOM": <Building2 size={13} strokeWidth={2} aria-hidden />,
   "Flags & Integrations": <Puzzle size={13} strokeWidth={2} aria-hidden />,
+  "Attendance Roster": <CalendarCheck size={13} strokeWidth={2} aria-hidden />,
+  "My Class Learners": <Users size={13} strokeWidth={2} aria-hidden />,
+  "Homework List": <ClipboardList size={13} strokeWidth={2} aria-hidden />,
+  "Dorm Allocations": <BedDouble size={13} strokeWidth={2} aria-hidden />,
+  "Laundry Custody": <Package size={13} strokeWidth={2} aria-hidden />,
+  "Garment Handover": <Package size={13} strokeWidth={2} aria-hidden />,
+  "Repairs Queue": <Wrench size={13} strokeWidth={2} aria-hidden />,
+  "Store Supplies": <Package size={13} strokeWidth={2} aria-hidden />,
+  "Store Inventory": <Package size={13} strokeWidth={2} aria-hidden />,
+  "Book Catalogue": <Library size={13} strokeWidth={2} aria-hidden />,
+  "Route & Manifest": <Bus size={13} strokeWidth={2} aria-hidden />,
+  "Visitors & Passes": <ShieldCheck size={13} strokeWidth={2} aria-hidden />,
+  "Admissions Funnel": <UserPlus size={13} strokeWidth={2} aria-hidden />,
+  "Houses & Points": <Trophy size={13} strokeWidth={2} aria-hidden />,
+  "Exam Entries & Reports": <GraduationCap size={13} strokeWidth={2} aria-hidden />,
+  "Staff Directory": <IdCard size={13} strokeWidth={2} aria-hidden />,
+  "Learners List": <Users size={13} strokeWidth={2} aria-hidden />,
   // Legacy child labels (pre-028 seeds) kept so old rows still render a glyph:
   Confirm: <ArrowLeftRight size={13} strokeWidth={2} aria-hidden />,
   "Money Rails": <Banknote size={13} strokeWidth={2} aria-hidden />,

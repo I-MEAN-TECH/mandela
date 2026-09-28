@@ -14,7 +14,7 @@ export default async function VaultPage() {
   const boot = await requireBootstrap();
   if (me.principal.kind !== "staff") redirect("/app");
   const role = me.principal.role ?? "";
-  if (!["admin", "principal", "bursar", "counter", "secretary"].includes(role)) redirect("/app");
+  if (!["admin", "principal", "bursar", "counter"].includes(role)) redirect("/app");
 
   const [d, t, l] = await Promise.all([getVaultDocs(), getDocTemplates(), getLearners()]);
   // The API wraps both lists ({ docs: … } / { templates: … }) — unwrap, and

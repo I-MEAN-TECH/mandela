@@ -12,12 +12,7 @@ next-env.d.ts
 .devpg*
 
 # agent session scratch: logs, cookie jars, keys, certs — never commit
-.freebuff/**/*.log
-.freebuff/*.txt
-.freebuff/*.key
-.freebuff/*.json
-.freebuff/*.html
-.freebuff/preview-web.log.err
+.freebuff/
 backend/.freebuff/
 frontend/.freebuff/
 frontend/apps/web/.freebuff-cert/

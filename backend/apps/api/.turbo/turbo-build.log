@@ -1,0 +1,4 @@
+
+> @mandela/api@0.1.0 build C:\Users\lewis\Desktop\mandela\backend\apps\api
+> tsc -p tsconfig.json
+

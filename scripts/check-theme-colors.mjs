@@ -40,9 +40,11 @@ const TOKEN_MIRROR_FILES = [
   "frontend/packages/ui/src/theme.ts",
 ];
 
-/** Color math modules — they transform hexes (mix/derive), never style with them. */
+/** Color math & browser metadata modules — head meta tags & Satori favicon renderers that cannot consume CSS variables. */
 const THEME_MATH_FILES = [
   "frontend/apps/web/src/lib/schoolTheme.ts",
+  "frontend/apps/site/src/app/icon.tsx",
+  "frontend/apps/site/src/app/layout.tsx",
 ];
 
 /** School-choice swatch palettes — data for the admin's theme editor. */

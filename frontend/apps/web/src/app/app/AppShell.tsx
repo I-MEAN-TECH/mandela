@@ -77,20 +77,21 @@ const ICONS: Record<string, React.ReactNode> = {
 };
 
 
-function tabToHref(tab: string, first: string): string {
+function tabToHref(tab: string, _first: string): string {
   const map: Record<string, string> = {
     Pay: "/app/pay",
     Homework: "/app/homework",
     Messages: "/app/messages",
     Profile: "/app/profile",
     Today: "/app",
+    Home: "/app",
     Mark: "/app/mark",
     Class: "/app/class",
     Spend: "/app/people/payroll",
     Care: "/app/people/conduct",
     Collect: "/app/money",
     Reconcile: "/app/reconcile",
-    Levies: "/app/levies",
+    Levies: "/app/money/fees",
     Reports: "/app/reports",
     Approve: "/app/approve",
     Insights: "/app/insights",
@@ -100,8 +101,9 @@ function tabToHref(tab: string, first: string): string {
     Money: "/app/money",
     Academics: "/app/academics",
     Settings: "/app/settings",
-    // Phase 6 role tabs — every sidebar label resolves to a real module.
+    // Role-specific tabs across all 12 roles
     Hostel: "/app/operations/hostel",
+    Laundry: "/app/laundry",
     Facilities: "/app/operations/facilities",
     Store: "/app/operations/store",
     Library: "/app/operations/library",
@@ -114,7 +116,7 @@ function tabToHref(tab: string, first: string): string {
     Visitors: "/app/operations/security",
     Inquiries: "/app/people/admissions",
   };
-  if (tab === first) return "/app";
+  if (tab === "Today" || tab === "Home") return "/app";
   return map[tab] ?? `/app/${tab.toLowerCase()}`;
 }
 

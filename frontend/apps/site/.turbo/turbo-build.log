@@ -1,0 +1,50 @@
+
+> @mandela/site@0.1.0 build C:\Users\lewis\Desktop\mandela\frontend\apps\site
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\lewis\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\lewis\Desktop\mandela\pnpm-lock.yaml
+
+   ▲ Next.js 15.5.4
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 5.2s
+   Skipping linting
+   Checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/17) ...
+   Generating static pages (4/17) 
+   Generating static pages (8/17) 
+   Generating static pages (12/17) 
+ ✓ Generating static pages (17/17)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    1.16 kB         106 kB
+├ ○ /_not-found                            985 B         103 kB
+├ ○ /about                                 137 B         102 kB
+├ ○ /contact                               137 B         102 kB
+├ ○ /for-parents                         1.15 kB         103 kB
+├ ○ /for-schools                           173 B         105 kB
+├ ○ /for-teachers                          173 B         105 kB
+├ ○ /icon                                  137 B         102 kB
+├ ○ /legal                                 137 B         102 kB
+├ ○ /pricing                               173 B         105 kB
+├ ○ /product                               173 B         105 kB
+├ ○ /robots.txt                            137 B         102 kB
+├ ○ /sitemap.xml                           137 B         102 kB
+├ ○ /start                                 173 B         105 kB
+└ ○ /stories                               173 B         105 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/722-459d4a35b3553be2.js       45.7 kB
+  ├ chunks/c2db93a7-6f38060730bf39bd.js  54.2 kB
+  └ other shared chunks (total)          1.99 kB
+
+
+○  (Static)  prerendered as static content
+

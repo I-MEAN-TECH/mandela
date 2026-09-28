@@ -3734,4 +3734,91 @@ export class WebController {
 }`);
   }
 
+  /**
+   * GET /web/search?q=…
+   * School-wide live search: learners, staff, guardians, receipts.
+   * Min 2 chars. Returns at most 20 hits. Requires any session.
+   */
+  @Get("search")
+  async schoolSearch(@Req() req: Request, @Res() res: Response, @Query("q") q: string) {
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal) { res.status(401).json({ error: "session required" }); return; }
+    const term = (q ?? "").trim();
+    if (term.length < 2) { res.json({ hits: [] }); return; }
+    const db = getSchoolPool(tenant.dbName);
+    const like = `%${term.toLowerCase()}%`;
+
+    const canSeeMoney = principal.kind === "staff" && ["admin", "principal", "bursar", "counter"].includes(principal.role ?? "");
+
+    const [lRows, sRows, gRows, rRows] = await Promise.all([
+      db.query<{ id: string; name: string; admission_no: string; class: string | null }>(
+        `SELECT id, name, admission_no, class FROM learner WHERE status = 'active' AND (lower(name) LIKE $1 OR lower(admission_no) LIKE $1) LIMIT 8`,
+        [like],
+      ),
+      principal.kind === "staff"
+        ? db.query<{ id: string; name: string; role: string; email: string }>(
+            `SELECT id, name, role, email FROM staff WHERE active = true AND (lower(name) LIKE $1 OR lower(email) LIKE $1) LIMIT 5`,
+            [like],
+          )
+        : Promise.resolve({ rows: [] as { id: string; name: string; role: string; email: string }[] }),
+      principal.kind === "staff"
+        ? db.query<{ id: string; name: string; phone: string }>(
+            `SELECT id, name, phone FROM guardian WHERE lower(name) LIKE $1 OR lower(phone) LIKE $1 LIMIT 4`,
+            [like],
+          )
+        : Promise.resolve({ rows: [] as { id: string; name: string; phone: string }[] }),
+      canSeeMoney
+        ? db.query<{ id: string; reference: string; amount_cents: string; learner_name: string }>(
+            `SELECT r.id, r.reference, r.amount_cents, l.name AS learner_name
+             FROM payment_receipt r JOIN learner l ON l.id = r.learner_id
+             WHERE lower(r.reference) LIKE $1 LIMIT 4`,
+            [like],
+          )
+        : Promise.resolve({ rows: [] as { id: string; reference: string; amount_cents: string; learner_name: string }[] }),
+    ]);
+
+    const hits = [
+      ...lRows.rows.map((r) => ({ kind: "learner", label: r.name, meta: `Adm ${r.admission_no}${r.class ? ` · ${r.class}` : ""}`, href: `/app/people/learners/${r.id}` })),
+      ...sRows.rows.map((r) => ({ kind: "staff", label: r.name, meta: `${r.role} · ${r.email}`, href: `/app/directory` })),
+      ...gRows.rows.map((r) => ({ kind: "guardian", label: r.name, meta: r.phone, href: `/app/people/guardians` })),
+      ...rRows.rows.map((r) => ({ kind: "receipt", label: r.reference, meta: `Ksh ${Number(r.amount_cents).toLocaleString("en-KE")} · ${r.learner_name}`, href: `/app/reconcile` })),
+    ];
+    res.json({ hits });
+  }
+
+  /**
+   * GET /web/bell
+   * Live counts for the topbar bell. Scoped by role:
+   * pending_payments (bursar/admin/counter), announcements_7d, audit_7d (admin/principal).
+   */
+  @Get("bell")
+  async bellState(@Req() req: Request, @Res() res: Response) {
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal) { res.status(401).json({ error: "session required" }); return; }
+    const db = getSchoolPool(tenant.dbName);
+    const role = principal.kind === "staff" ? (principal.role ?? "") : "";
+    const canSeeMoney = ["admin", "principal", "bursar", "counter"].includes(role);
+    const canSeeAudit = ["admin", "principal"].includes(role);
+
+    const [pRes, aRes, auRes] = await Promise.all([
+      canSeeMoney
+        ? db.query<{ c: string }>(`SELECT COUNT(*)::text AS c FROM payment_receipt WHERE confirmed_at IS NULL`)
+        : Promise.resolve({ rows: [{ c: "0" }] }),
+      db.query<{ c: string }>(`SELECT COUNT(*)::text AS c FROM announcement WHERE created_at >= now() - interval '7 days'`)
+        .catch(() => ({ rows: [{ c: "0" }] })),
+      canSeeAudit
+        ? db.query<{ c: string }>(`SELECT COUNT(*)::text AS c FROM audit_log WHERE created_at >= now() - interval '7 days'`)
+            .catch(() => ({ rows: [{ c: "0" }] }))
+        : Promise.resolve({ rows: [{ c: "0" }] }),
+    ]);
+
+    res.json({
+      pending_payments: Number(pRes.rows[0]?.c ?? 0),
+      announcements_7d: Number(aRes.rows[0]?.c ?? 0),
+      audit_7d: Number(auRes.rows[0]?.c ?? 0),
+    });
+  }
+
 }

@@ -13,7 +13,7 @@ export default async function ConsentPage() {
   const me = await requireSession();
   const boot = await requireBootstrap();
   if (me.principal.kind !== "staff") redirect("/app");
-  if (!["admin", "principal", "secretary", "teacher"].includes(me.principal.role ?? "")) redirect("/app");
+  if (!["admin", "principal", "counter", "teacher"].includes(me.principal.role ?? "")) redirect("/app");
 
   const c = await getMediaConsent();
   const rows = c && "rows" in c ? c.rows : [];

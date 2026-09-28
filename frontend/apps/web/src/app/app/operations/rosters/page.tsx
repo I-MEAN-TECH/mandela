@@ -12,7 +12,7 @@ export default async function RostersPage() {
   const me = await requireSession();
   const boot = await requireBootstrap();
   if (me.principal.kind !== "staff") redirect("/app");
-  if (!["admin", "principal", "deputy", "teacher"].includes(me.principal.role ?? "")) redirect("/app");
+  if (!["admin", "principal", "hod", "teacher"].includes(me.principal.role ?? "")) redirect("/app");
 
   const r = await getDutyRoster();
   const dir = await getStaffDirectory();
