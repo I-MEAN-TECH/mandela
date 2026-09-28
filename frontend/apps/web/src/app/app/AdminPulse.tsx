@@ -59,10 +59,10 @@ export function AdminPulse({
   const donutTotal = pulse.by_method.reduce((s, m) => s + Number(m.total_cents), 0);
 
   return (
-    <div className="grid gap-s3h">
+    <div className="grid gap-s5">
       {/* ROW 1 — four stat cards, even 4-across (the comp's top row). */}
       <Reveal>
-        <div className="grid grid-cols-2 gap-s3h xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-s4 xl:grid-cols-4">
           <KpiCard
             icon={ICON.coin }
             delta={{ text: `${rate}% of billed`, tone: rate >= 90 ? "ok" : rate >= 50 ? "warn" : "danger" }}
@@ -95,7 +95,7 @@ export function AdminPulse({
 
       {/* ROW 2 — hero + quick tiles | Cashflow (the comp's left rail + chart) */}
       <Reveal delay={60}>
-        <div className="grid gap-s3h xl:grid-cols-[minmax(0,300px)_1fr]">
+        <div className="grid gap-s5 xl:grid-cols-[minmax(0,300px)_1fr]">
           <div className="grid content-start gap-s3h">
             {/* The hero — the term as the balance card */}
             <section className="relative overflow-hidden rounded bg-brand-deep p-s5 text-brand-deep-contrast shadow-1">
@@ -232,7 +232,7 @@ export function AdminPulse({
 
       {/* ROW 3 — Statistic donut | Recent transactions */}
       <Reveal delay={120} className="min-w-0">
-        <div className="grid gap-s3h xl:grid-cols-[340px_1fr]">
+        <div className="grid gap-s5 xl:grid-cols-[340px_1fr]">
           <Card>
             <CardHead title="Statistic" sub="Collected money by channel" action={<TermPill label="This term" />} />
             {donutTotal === 0 ? (
@@ -304,7 +304,7 @@ export function AdminPulse({
 
       {/* ROW 4 — Recent activity | Collections by class */}
       <Reveal delay={180} className="min-w-0">
-        <div className="grid gap-s3h xl:grid-cols-[340px_1fr]">
+        <div className="grid gap-s5 xl:grid-cols-[340px_1fr]">
           <Card>
             <CardHead title="Recent activity" sub="From the audit trail" action={<Link href="/app/settings" className="inline-flex h-11 items-center text-[12.5px] font-semibold underline decoration-paper-300 underline-offset-4 hover:decoration-primary">All<ArrowRight aria-hidden size={14} strokeWidth={2} className="inline align-[-2px]" /></Link>} />
             {pulse.recent_audit.length === 0 ? (

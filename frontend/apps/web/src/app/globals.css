@@ -332,4 +332,15 @@ body {
   main[data-view="list"] .rise {
     animation: none;
   }
+
+  /* 6) The spaced stacks (gap-s5 section rhythm) tighten back to the ledger's
+     compact rows — density is the point of list mode. Cards-mode spacing is
+     untouched; this only re-tightens what rule 1 flattened. */
+  main[data-view="list"] [class*='gap-s5'] {
+    row-gap: var(--s3);
+  }
+  main[data-view="list"] [class*='gap-s4'] {
+    column-gap: var(--s3);
+    row-gap: var(--s3);
+  }
 }

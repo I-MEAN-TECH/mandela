@@ -67,9 +67,9 @@ export function TeacherToday({ p }: { p: TeacherPulseData }) {
   // renders ONLY the mark roster — nothing may precede activation (§6.3).
   const pct = p.expected > 0 ? Math.round((p.present / p.expected) * 100) : null;
   return (
-    <>
+    <div className="grid gap-s5">
       <StaffNotice n={p.staff_notice} storageKey="mandela_notice_teacher" />
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Present today" value={`${p.present}/${p.expected}`} note={pct !== null ? `${pct}% of my class` : "not marked"} />
         <KpiCard label="Homework due (7d)" value={String(p.homework_due_week)} />
         <KpiCard label="Unmarked assessments" value={String(p.unmarked_assessments)} />
@@ -98,7 +98,7 @@ export function TeacherToday({ p }: { p: TeacherPulseData }) {
 
       {p.heatmap.length > 0 ? (
         <Card>
-          <CardHead title="My class — last 10 marked days" sub="Green = here · L = late · ✕ = absent · · = no record" />
+          <CardHead title="My class — last 10 marked days" sub="Green = here · L = late · ✕ = absent · blank = no record" />
           <WeekdayHeatmap rows={p.heatmap.map((h) => ({ name: h.name, marks: h.marks as HeatMark[] }))} />
         </Card>
       ) : null}
@@ -111,7 +111,7 @@ export function TeacherToday({ p }: { p: TeacherPulseData }) {
           </ul>
         </Card>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -121,9 +121,9 @@ export function BursarToday({ p }: { p: BursarPulseData }) {
   const pct = Number(p.billed_term_cents) > 0 ? Math.round((Number(p.collected_term_cents) / Number(p.billed_term_cents)) * 100) : 0;
   const maxWeek = Math.max(1, ...p.week.map((w) => Number(w.collected_cents)));
   return (
-    <>
+    <div className="grid gap-s5">
       <StaffNotice n={p.staff_notice} storageKey="mandela_notice_bursar" />
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Collected today" value={kes(p.collected_today_cents)} />
         <KpiCard label="This term" value={kes(p.collected_term_cents)} note={`${pct}% of ${kes(p.billed_term_cents)}`} />
         <KpiCard label="Pending confirmations" value={String(p.pending_confirmations)} note={p.pending_confirmations > 0 ? "needs eyes" : "clear"} />
@@ -182,7 +182,7 @@ export function BursarToday({ p }: { p: BursarPulseData }) {
           ))}
         </ul>
       </Card>
-    </>
+    </div>
   );
 }
 
@@ -190,8 +190,8 @@ export function BursarToday({ p }: { p: BursarPulseData }) {
 
 export function PrincipalToday({ p }: { p: PrincipalPulseData }) {
   return (
-    <>
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+    <div className="grid gap-s5">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Attendance today" value={p.attendance_pct !== null ? `${p.attendance_pct}%` : "—"} note="whole school" />
         <KpiCard label="Incidents (7d)" value={String(p.incidents_7d)} note={p.incidents_7d > 0 ? "needs eyes" : "quiet"} />
         <KpiCard label="Approvals pending" value={String(p.approvals_pending)} />
@@ -265,7 +265,7 @@ export function PrincipalToday({ p }: { p: PrincipalPulseData }) {
           </ul>
         )}
       </Card>
-    </>
+    </div>
   );
 }
 
@@ -273,9 +273,9 @@ export function PrincipalToday({ p }: { p: PrincipalPulseData }) {
 
 export function CounterToday({ p }: { p: CounterPulseData }) {
   return (
-    <>
+    <div className="grid gap-s5">
       <StaffNotice n={p.staff_notice} storageKey="mandela_notice_counter" />
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Visitors on site" value={String(p.visitors_on_site)} />
         <KpiCard label="Calls logged today" value={String(p.calls_today)} />
         <KpiCard label="Open inquiries" value={String(p.open_inquiries)} />
@@ -337,7 +337,7 @@ export function CounterToday({ p }: { p: CounterPulseData }) {
           )}
         </Card>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -345,9 +345,9 @@ export function CounterToday({ p }: { p: CounterPulseData }) {
 
 export function DriverToday({ p }: { p: DriverPulseData }) {
   return (
-    <>
+    <div className="grid gap-s5">
       <StaffNotice n={p.staff_notice} storageKey="mandela_notice_driver" />
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Today's trips" value={String(p.trips_today)} />
         <KpiCard label="On manifest" value={String(p.on_manifest)} />
         <KpiCard label="Not picked up" value={String(p.not_picked_up)} note={p.not_picked_up > 0 ? "run the route" : "all aboard"} />
@@ -388,7 +388,7 @@ export function DriverToday({ p }: { p: DriverPulseData }) {
           </ul>
         </Card>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -397,9 +397,9 @@ export function DriverToday({ p }: { p: DriverPulseData }) {
 export function DormParentToday({ p }: { p: DormParentPulseData }) {
   const pct = p.beds > 0 ? Math.round((p.occupied / p.beds) * 100) : 0;
   return (
-    <>
+    <div className="grid gap-s5">
       <StaffNotice n={p.staff_notice} storageKey="mandela_notice_dorm" />
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Beds tonight" value={`${p.occupied}/${p.beds}`} note={`${pct}% occupied`} />
         <KpiCard label="Exeats out now" value={String(p.exeats_out)} />
         <KpiCard label="Laundry in custody" value={String(p.laundry_in_custody)} />
@@ -485,7 +485,7 @@ export function DormParentToday({ p }: { p: DormParentPulseData }) {
           </ul>
         </Card>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -493,9 +493,9 @@ export function DormParentToday({ p }: { p: DormParentPulseData }) {
 
 export function JanitorToday({ p }: { p: JanitorPulseData }) {
   return (
-    <>
+    <div className="grid gap-s5">
       <StaffNotice n={p.staff_notice} storageKey="mandela_notice_janitor" />
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Open repairs" value={String(p.open_repairs)} />
         <KpiCard label="Done this week" value={String(p.done_7d)} />
         <KpiCard label="Structural open" value={String(p.structural_open)} note={p.structural_open > 0 ? "needs the office" : undefined} />
@@ -537,7 +537,7 @@ export function JanitorToday({ p }: { p: JanitorPulseData }) {
           </ul>
         </Card>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -546,9 +546,9 @@ export function JanitorToday({ p }: { p: JanitorPulseData }) {
 export function LibrarianToday({ p }: { p: LibrarianPulseData }) {
   const maxBorrow = Math.max(1, ...p.by_class_30d.map((b) => b.n));
   return (
-    <>
+    <div className="grid gap-s5">
       <StaffNotice n={p.staff_notice} storageKey="mandela_notice_librarian" />
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Copies out" value={String(p.copies_out)} />
         <KpiCard label="Due today" value={String(p.due_today)} />
         <KpiCard label="Overdue" value={String(p.overdue)} />
@@ -602,7 +602,7 @@ export function LibrarianToday({ p }: { p: LibrarianPulseData }) {
           </ul>
         </Card>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -610,9 +610,9 @@ export function LibrarianToday({ p }: { p: LibrarianPulseData }) {
 
 export function PatronToday({ p }: { p: PatronPulseData }) {
   return (
-    <>
+    <div className="grid gap-s5">
       <StaffNotice n={p.staff_notice} storageKey="mandela_notice_patron" />
-      <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
         <KpiCard label="Leader" value={p.leader_house ?? "—"} note={p.leader_points ? `${p.leader_points} pts` : undefined} />
         <KpiCard label="Events this week" value={String(p.events_week)} />
         <KpiCard label="Kit low" value={String(p.kit_low)} />
@@ -674,7 +674,7 @@ export function PatronToday({ p }: { p: PatronPulseData }) {
           </ul>
         </Card>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -685,7 +685,7 @@ export function HodToday({ p }: { p: HodPulseData }) {
   // no department to oversee; show the base only.
   const overlay = p.dept_area !== null;
   return (
-    <>
+    <div className="grid gap-s5">
       {/* TeacherToday already renders the shared staff notice (B1) */}
       <TeacherToday p={p.teacher} />
       {overlay ? (
@@ -694,7 +694,7 @@ export function HodToday({ p }: { p: HodPulseData }) {
             title={`Department — ${p.dept_area}`}
             sub={"Coverage, marking and means across the department's lessons"}
           />
-          <div className="grid grid-cols-2 gap-s3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-s4 sm:grid-cols-4">
             <KpiCard label="Coverage" value={p.coverage_pct !== null ? `${p.coverage_pct}%` : "—"} note="slots with a teacher" />
             <KpiCard label="Unmarked (dept)" value={String(p.unmarked_dept)} />
             <KpiCard label="Dept mean" value={p.dept_mean !== null ? String(p.dept_mean) : "—"} note={p.school_mean !== null ? `school ${p.school_mean}` : undefined} />
@@ -734,6 +734,6 @@ export function HodToday({ p }: { p: HodPulseData }) {
           </div>
         </Card>
       ) : null}
-    </>
+    </div>
   );
 }

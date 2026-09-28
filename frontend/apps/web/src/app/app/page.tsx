@@ -121,7 +121,7 @@ export default async function AppHome() {
         actions={<AppLiveBar />}
       />
 
-      <div className="mt-s7 grid gap-s3h">
+      <div className="mt-s7 grid gap-s5">
         {isGuardian ? (
           <GuardianHome data={home as GuardianHomeData} />
         ) : role === "bursar" && rolePulse && !("error" in (rolePulse as { error?: string })) ? (
@@ -183,7 +183,7 @@ export default async function AppHome() {
 
         {/* Latest from the school — announcements feed + anomaly flag */}
         <Reveal delay={200}>
-          <section className="mt-s3h grid gap-s3h lg:grid-cols-2">
+          <section className="mt-s3h grid gap-s5 lg:grid-cols-2">
             {isAdmin ? <AiAnomalyCard /> : null}
             <Card>
               <CardHead
@@ -265,10 +265,10 @@ function StaffHome({
   const max7 = Math.max(...data.last7.map((d) => Number(d.total)), 1);
 
   return (
-    <div className="grid gap-s3h">
+    <div className="grid gap-s5">
       {/* Row 1 — the three answers, counting up */}
       <Reveal>
-        <div className="grid gap-s3h sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-s4 sm:grid-cols-2 xl:grid-cols-3">
           <KpiCard
             ink
             label="Collected this term"
@@ -326,7 +326,7 @@ function StaffHome({
 
       {/* Row 2 — ledger + quick actions */}
       <Reveal delay={80}>
-        <div className="grid gap-s3h lg:grid-cols-3">
+        <div className="grid gap-s5 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHead
               title="Recent payments"
@@ -455,10 +455,9 @@ function GuardianHome({ data }: { data: GuardianHomeData }) {
   if ("error" in data) {
     return <EmptyState title="Could not load your family" body="The school database did not respond. Try again shortly." />;
   }
-  return (
-    <Reveal>
-      <div className="grid gap-s3h lg:grid-cols-2">
-        {data.learners.map((l) => {
+  return (      <Reveal>
+        <div className="grid gap-s5 lg:grid-cols-2">
+          {data.learners.map((l) => {
           const due = Number(data.due_cents[l.id] ?? 0);
           const paid = Number(data.paid_this_term_cents[l.id] ?? 0);
           const balance = Math.max(due - paid, 0);
