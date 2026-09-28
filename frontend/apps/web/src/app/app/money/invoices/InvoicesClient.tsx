@@ -115,8 +115,8 @@ function StatementSheet({ learnerId, onClose }: { learnerId: string; onClose: ()
           <div className="grid gap-s3">
             {/* Letterhead — everything from school_settings (no hardcoding) */}
             <div className="border-b border-paper-200 pb-4">
-              <p className="font-display text-lg font-bold text-ink-950">{data.school.name}</p>
-              <p className="text-xs text-ink-500">
+              <p className="font-display text-lg font-bold leading-snug text-ink-950">{data.school.name}</p>
+              <p className="text-xs leading-relaxed text-ink-500">
                 {[data.school.contact_address, data.school.contact_phone, data.school.contact_email]
                   .filter(Boolean)
                   .join(" · ")}
@@ -136,36 +136,40 @@ function StatementSheet({ learnerId, onClose }: { learnerId: string; onClose: ()
               </div>
             </div>
 
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-paper-200 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">
-                  <th className="py-2">Item</th>
-                  <th className="py-2 text-right">Billed</th>
-                  <th className="py-2 text-right">Paid</th>
-                  <th className="py-2 text-right">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.items.map((it) => (
-                  <tr key={it.name} className="border-b border-paper-100">
-                    <td className="py-2 pr-2 text-ink-900">{it.name}</td>
-                    <td className="py-2 text-right tabular-nums"><Money cents={it.billed_cents} /></td>
-                    <td className="py-2 text-right tabular-nums text-ok"><Money cents={it.paid_cents} /></td>
-                    <td className="py-2 text-right tabular-nums text-ink-900">
-                      {it.balance_cents > 0 ? <Money cents={it.balance_cents} /> : <span className="text-ok">cleared</span>}
-                    </td>
+            {/* min-w + nowrap: on narrow screens the sheet scrolls the table
+                instead of letting right-aligned money columns collide. */}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[430px] text-sm">
+                <thead>
+                  <tr className="border-b border-paper-200 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">
+                    <th className="whitespace-nowrap py-2">Item</th>
+                    <th className="whitespace-nowrap py-2 pl-4 text-right">Billed</th>
+                    <th className="whitespace-nowrap py-2 pl-4 text-right">Paid</th>
+                    <th className="whitespace-nowrap py-2 pl-4 text-right">Balance</th>
                   </tr>
-                ))}
-              </tbody>
+                </thead>
+                <tbody>
+                  {data.items.map((it) => (
+                    <tr key={it.name} className="border-b border-paper-100">
+                      <td className="py-2 pr-2 text-ink-900">{it.name}</td>
+                      <td className="whitespace-nowrap py-2 pl-4 text-right tabular-nums"><Money cents={it.billed_cents} /></td>
+                      <td className="whitespace-nowrap py-2 pl-4 text-right tabular-nums text-ok"><Money cents={it.paid_cents} /></td>
+                      <td className="whitespace-nowrap py-2 pl-4 text-right tabular-nums text-ink-900">
+                        {it.balance_cents > 0 ? <Money cents={it.balance_cents} /> : <span className="text-ok">cleared</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
               <tfoot>
                 <tr>
                   <td className="py-2 font-semibold text-ink-950">Total</td>
-                  <td className="py-2 text-right font-semibold tabular-nums"><Money cents={data.billed_cents} /></td>
-                  <td className="py-2 text-right font-semibold tabular-nums text-ok"><Money cents={data.paid_cents} /></td>
-                  <td className="py-2 text-right font-semibold tabular-nums text-ink-950"><Money cents={data.balance_cents} /></td>
+                  <td className="whitespace-nowrap py-2 pl-4 text-right font-semibold tabular-nums"><Money cents={data.billed_cents} /></td>
+                  <td className="whitespace-nowrap py-2 pl-4 text-right font-semibold tabular-nums text-ok"><Money cents={data.paid_cents} /></td>
+                  <td className="whitespace-nowrap py-2 pl-4 text-right font-semibold tabular-nums text-ink-950"><Money cents={data.balance_cents} /></td>
                 </tr>
               </tfoot>
-            </table>
+              </table>
+            </div>
 
             <div>
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Payments this term</p>
@@ -196,9 +200,11 @@ function StatementSheet({ learnerId, onClose }: { learnerId: string; onClose: ()
               ) : null}
             </div>
 
-            <div className="flex items-center justify-between gap-2 print:hidden">
-              <p className="text-xs text-ink-500">This is the same figure the parent sees — one ledger, no arguments.</p>
-              <div className="flex gap-2">
+            {/* Footer: caption wraps in its own block on narrow widths instead
+                of being crushed to a column by the three buttons. */}
+            <div className="flex flex-col gap-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
+              <p className="max-w-[36ch] text-xs leading-relaxed text-ink-500">This is the same figure the parent sees — one ledger, no arguments.</p>
+              <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" onClick={onClose}>Close</Button>
                 <Button
                   variant="secondary"
