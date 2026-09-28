@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -p 3000",
+    "dev": "node -e \"process.env.NODE_OPTIONS=(process.env.NODE_OPTIONS||'')+' --max-old-space-size=3072';require('child_process').spawnSync('next',['dev','--turbopack','-p','3000'],{stdio:'inherit',shell:true,env:process.env})\"",
     "build": "next build",
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
