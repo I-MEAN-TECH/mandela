@@ -63,6 +63,9 @@ export function ApprovalQueue({ pending, canApprove }: {
   const router = useRouter();
   const [pendingAction, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // A row without a real card id cannot be printed or approved — never render
+  // it (a stale payload used to emit cardId=undefined links).
+  const queue = pending.filter((p) => !!p.card_id);
 
   return (
     <Card>
@@ -70,11 +73,11 @@ export function ApprovalQueue({ pending, canApprove }: {
         title="Approval queue"
         sub="Generated cards wait in draft — the principal approves, the admin sees state."
       />
-      {pending.length === 0 ? (
+      {queue.length === 0 ? (
         <p className="py-4 text-[13px] text-ink-500">Nothing waiting. Generate a card below.</p>
       ) : (
         <div className="flex flex-col divide-y divide-paper-200">
-          {pending.map((p) => (
+          {queue.map((p) => (
             <div key={p.card_id} className="flex flex-wrap items-center gap-3 py-2.5">
               <div className="min-w-[150px] flex-1">
                 <p className="text-[13.5px] font-semibold text-ink-950">{p.learner}</p>
@@ -172,8 +175,11 @@ export function CardDesk({ cards }: { cards: ExamCoverageData["recentCards"] }) 
   const [state, setState] = useState("");
   const [q, setQ] = useState("");
 
-  const classNames = [...new Set(cards.map((c) => c.class_name).filter((n): n is string => !!n))];
-  const filtered = cards.filter(
+  // Same guard as the approval queue: a card without a real id is unprintable
+  // noise — drop it instead of rendering a dead link.
+  const list = cards.filter((c) => !!c.card_id);
+  const classNames = [...new Set(list.map((c) => c.class_name).filter((n): n is string => !!n))];
+  const filtered = list.filter(
     (c) =>
       (!cls || c.class_name === cls) &&
       (!state || c.state === state) &&
@@ -186,7 +192,7 @@ export function CardDesk({ cards }: { cards: ExamCoverageData["recentCards"] }) 
         title="All report cards"
         sub="Every recent card — filter by class, learner, or state; open the print view from here."
       />
-      {cards.length === 0 ? (
+      {list.length === 0 ? (
         <p className="py-4 text-[13px] text-ink-500">No cards yet — generate the first one on the right.</p>
       ) : (
         <>
@@ -221,7 +227,7 @@ export function CardDesk({ cards }: { cards: ExamCoverageData["recentCards"] }) 
               onChange={(e) => setQ(e.target.value)}
               className="h-9 min-w-[160px] flex-1 rounded-sm border border-paper-300 bg-surface px-3 text-[12.5px] text-ink-950 placeholder:text-ink-400"
             />
-            <span className="numeral text-[11.5px] text-ink-500">{filtered.length} of {cards.length}</span>
+            <span className="numeral text-[11.5px] text-ink-500">{filtered.length} of {list.length}</span>
           </div>
           <div className="flex max-h-[420px] flex-col divide-y divide-paper-200 overflow-y-auto">
             {filtered.map((c) => (
