@@ -221,48 +221,56 @@ body {
 }
 
 @media print {
-  /* Statement sheet 13: print only the sheet — hide the app chrome and
-     pin the overlay to the page so the parent gets a clean paper proof. */
+  /* Paper law: REMOVE everything that is not the sheet. The old trick —
+     visibility:hidden on body * — hid the ink but kept every element's
+     layout box, which printed as blank space around the document. Hiding
+     with display:none drops the box entirely; the sheet keeps only the
+     @page margin.
+
+     Two sheet markers:
+       [data-doc]       — /print/* routes: the page IS the document.
+       [data-statement] — the statement modal inside the app.
+  */
   @page {
-    margin: 14mm;
+    margin: 12mm;
   }
-  body * {
-    visibility: hidden;
+
+  body:has([data-doc]) > *:not(:has([data-doc])):not(script),
+  body:has([data-statement]) > *:not(:has([data-statement])):not(script) {
+    display: none !important;
   }
-  [data-statement],
-  [data-statement] * {
-    visibility: visible;
+
+  /* Statement modal: un-fix the overlay and the sheet so the sheet prints
+     in normal flow at the top of the paper — backdrop gone, no clipping. */
+  body:has([data-statement]) [role="dialog"] {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    padding: 0 !important;
+    overflow: visible !important;
   }
   [data-statement] {
-    position: fixed;
-    inset: 0;
-    max-width: none;
-    border-radius: 0;
-    box-shadow: none;
-    background: white;
+    position: static !important;
+    inset: auto !important;
+    max-width: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
-}
 
-/* /print/* document routes (report card, fee statement, receipt): the page
-   IS the document — print ONLY the sheet. Everything else hides; the sheet
-   stays in flow (position:fixed would clip multi-page docs to one page). */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  [data-doc],
-  [data-doc] * {
-    visibility: visible;
-  }
+  /* Document sheets: full width, no screen chrome, no print-only buttons. */
   [data-doc] {
-    max-width: none;
-    padding: 0;
-    margin: 0;
-    border: 0;
-    box-shadow: none;
-    border-radius: 0;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: white !important;
   }
-  [data-doc] .print\:hidden,
+  main:has(> [data-doc]) {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
   .print\:hidden {
     display: none !important;
   }
