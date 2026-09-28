@@ -103,7 +103,7 @@ export function NavPill({
         // row. No glide-into-child variant anywhere.
         const linkActive = active;
         return (
-          <li key={item.href} className="relative">
+          <li key={`${item.label}-${item.href}`} className="relative">
             <Link
               href={item.href}
               title={responsive ? item.label : undefined}
@@ -140,7 +140,7 @@ export function NavPill({
                   const cActive = childActive(child);
                   const cIcon = child.icon;
                   return (
-                    <li key={child.href}>
+                    <li key={`${child.label}-${child.href}`}>
                       <Link
                         href={child.href}
                         aria-current={cActive ? "location" : undefined}
