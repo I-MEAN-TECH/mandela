@@ -102,6 +102,10 @@ export const NAV_CHILDREN: Record<string, NavChild[]> = {
   Homework: [
     { label: "Homework List", href: "/app/homework" },
   ],
+  Levies: [
+    { label: "Fee & Levy Schedule", href: "/app/levies" },
+    { label: "Fee Structures", href: "/app/money/fees" },
+  ],
   Hostel: [
     { label: "Dorm Allocations", href: "/app/operations/hostel" },
     { label: "Laundry Custody", href: "/app/laundry" },

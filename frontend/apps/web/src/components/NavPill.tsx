@@ -44,9 +44,9 @@ export function NavPill({
     return hash === `#${childHash}`;
   }
 
-  // Top-level active: exact route match, or a child is active (the parent
-  // highlights while you're inside one of its sub-modules).
-  const activeIndex = items.findIndex((i) => i.href === pathname || i.children?.some(childActive));
+  // Top-level active: exact route match first; if no top-level matches, check children.
+  const exactIndex = items.findIndex((i) => i.href === pathname);
+  const activeIndex = exactIndex >= 0 ? exactIndex : items.findIndex((i) => i.children?.some(childActive));
 
   useLayoutEffect(() => {
     const list = listRef.current;
