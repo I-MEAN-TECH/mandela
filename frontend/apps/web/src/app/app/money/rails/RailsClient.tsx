@@ -9,6 +9,7 @@ import {
   importBankCsvAction,
   type RailsSuggestionRow,
 } from "@/lib/api";
+import { CsvFilePicker } from "@/components/CsvFilePicker";
 
 /**
  * Money Rails ⑭ — the ASSIST layer (docs/BUILD-PHASES.md Phase 2).
@@ -116,63 +117,101 @@ export function RailsQueue({ rows, learners }: {
   );
 }
 
+/** Shared row-shape for the bank statement: date, payer, reference, amount. */
+function parseBankRows(text: string) {
+  return text
+    .split("\n")
+    .map((line) => line.split(",").map((c) => c.trim()))
+    .filter((c) => c.length >= 4)
+    .map((c) => ({
+      paidOn: c[0]!,
+      payerName: c[1] || undefined,
+      payerRef: c[2] || undefined,
+      amountCents: Math.round(parseFloat(c[3]!.replace(/[^\d.]/g, "")) * 100),
+    }))
+    .filter((r) => r.amountCents > 0 && /^\d{4}-\d{2}-\d{2}$/.test(r.paidOn));
+}
+
+const BANK_TEMPLATE =
+  "date,payer,reference,amount\n" +
+  "2026-09-10,Jane Wanjiku,PAYSLIP-8812 2005001,4500\n" +
+  "2026-09-10,M-PESA BANK,254733000001,3000\n";
+
 export function CsvImportCard() {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [text, setText] = useState("");
 
+  const importRows = (rows: { paidOn: string; payerName?: string; payerRef?: string; amountCents: number }[], fileName: string) => {
+    if (!rows.length) {
+      setMsg({ ok: false, text: "No valid rows — need: date, payer, reference, amount" });
+      return;
+    }
+    start(async () => {
+      const res = await importBankCsvAction({ fileName, rows });
+      setMsg(
+        res.ok && "data" in res
+          ? { ok: true, text: `Imported ${rows.length} suggestion${rows.length === 1 ? "" : "s"} — confirm or dismiss each below.` }
+          : { ok: false, text: res.error ?? "Failed" },
+      );
+      if (res.ok) {
+        setText("");
+        router.refresh();
+      }
+    });
+  };
+
   return (
     <Card>
       <CardHead
         title="Import bank statement (CSV)"
-        sub="Paste rows as: date, payer, reference, amount. Each row becomes a suggestion — the engine guesses, you decide."
+        sub="Upload the bank's export file, or paste rows as: date, payer, reference, amount. Each row becomes a suggestion — the engine guesses, you decide."
       />
-      <form
-        className="flex flex-col gap-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const rows = text
-            .split("\n")
-            .map((line) => line.split(",").map((c) => c.trim()))
-            .filter((c) => c.length >= 4)
-            .map((c) => ({
-              paidOn: c[0]!,
-              payerName: c[1] || undefined,
-              payerRef: c[2] || undefined,
-              amountCents: Math.round(parseFloat(c[3]!.replace(/[^\d.]/g, "")) * 100),
-            }))
-            .filter((r) => r.amountCents > 0 && /^\d{4}-\d{2}-\d{2}$/.test(r.paidOn));
-          if (!rows.length) {
-            setMsg({ ok: false, text: "No valid rows — need: date, payer, reference, amount" });
-            return;
-          }
-          start(async () => {
-            const res = await importBankCsvAction({ fileName: `paste-${new Date().toISOString().slice(0, 10)}`, rows });
-            setMsg(
-              res.ok && "data" in res
-                ? { ok: true, text: `Imported ${rows.length} suggestion${rows.length === 1 ? "" : "s"}` }
-                : { ok: false, text: res.error ?? "Failed" },
-            );
-            if (res.ok) {
-              setText("");
-              router.refresh();
+      <div className="flex flex-col gap-3">
+        <CsvFilePicker
+          onFile={(fileText, filename) => {
+            const rows = parseBankRows(fileText);
+            if (!rows.length) {
+              setMsg({ ok: false, text: `No valid rows in ${filename} — each line needs: date, payer, reference, amount` });
+              return;
             }
-          });
-        }}
-      >
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          rows={5}
-          placeholder={"2026-09-10, Jane Wanjiku, PAYSLIP-8812 2005001, 4500\n2026-09-10, M-PESA BANK, 254733000001, 3000"}
-          className="w-full rounded-sm border border-paper-300 bg-surface p-3 font-mono text-[12.5px] text-ink-950"
+            setMsg(null);
+            importRows(rows, filename);
+          }}
+          loading={pending}
+          templateText={BANK_TEMPLATE}
+          templateName="bank-statement-template.csv"
+          label="Upload the bank statement file"
+          sub="Click to browse, or drop the bank's CSV export here"
         />
-        <Button type="submit" variant="secondary" disabled={pending || !text.trim()}>Import rows</Button>
+
+        <details className="rounded-sm border border-paper-200 bg-paper-50 px-3 py-2">
+          <summary className="cursor-pointer text-[12.5px] font-semibold text-ink-800">Or paste rows instead</summary>
+          <form
+            className="mt-2 flex flex-col gap-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              importRows(parseBankRows(text), `paste-${new Date().toISOString().slice(0, 10)}`);
+            }}
+          >
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              rows={5}
+              placeholder={"2026-09-10, Jane Wanjiku, PAYSLIP-8812 2005001, 4500\n2026-09-10, M-PESA BANK, 254733000001, 3000"}
+              className="w-full rounded-sm border border-paper-300 bg-surface p-3 font-mono text-[12.5px] text-ink-950"
+            />
+            <div>
+              <Button type="submit" variant="secondary" size="sm" disabled={pending || !text.trim()}>Import pasted rows</Button>
+            </div>
+          </form>
+        </details>
+
         {msg ? (
           <p className={msg.ok ? "text-[12.5px] text-pine-700" : "text-[12.5px] text-danger"} role="status">{msg.text}</p>
         ) : null}
-      </form>
+      </div>
     </Card>
   );
 }
