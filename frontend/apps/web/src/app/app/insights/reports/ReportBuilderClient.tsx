@@ -1,5 +1,7 @@
 "use client";
 
+import { ChevronDown, ChevronUp } from "lucide-react";
+
 import { useEffect, useState } from "react";
 import { Button, Card, CardHead, EmptyState } from "@mandela/ui";
 import { getReportDataset, type ReportDatasetPayload } from "@/lib/api";
@@ -133,7 +135,7 @@ export function ReportBuilderClient() {
                         aria-label={`Sort by ${c}`}
                       >
                         {c.charAt(0).toUpperCase() + c.slice(1)}
-                        {sortKey === c ? (sortDir === 1 ? " ↑" : " ↓") : ""}
+                        {sortKey === c ? (sortDir === 1 ? <ChevronUp aria-hidden size={13} className="inline align-[-2px]" /> : <ChevronDown aria-hidden size={13} className="inline align-[-2px]" />) : null}
                       </button>
                     </th>
                   ))}

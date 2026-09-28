@@ -38,8 +38,6 @@ export interface WizardProps {
   renderDoneActions?: () => React.ReactNode;
 }
 
-const STEP_TITLES = ["①", "②", "③", "④", "⑤", "⑥"];
-
 export function Wizard({ steps, onConfirm, doneTitle, doneHint, renderDoneActions }: WizardProps) {
   const [index, setIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +57,7 @@ export function Wizard({ steps, onConfirm, doneTitle, doneHint, renderDoneAction
     return (
       <div className="rounded-sm border border-ok/30 bg-ok/5 p-s5 text-center" role="status">
         <p className="text-3xl font-bold text-ok" aria-hidden>
-          ✔
+          <DoneGlyph />
         </p>
         <h3 className="mt-2 text-lg font-bold">{doneTitle}</h3>
         <p className="mx-auto mt-2 max-w-sm font-mono text-lg font-semibold tracking-wide">{receipt}</p>
@@ -85,14 +83,20 @@ export function Wizard({ steps, onConfirm, doneTitle, doneHint, renderDoneAction
                     : "border border-border text-muted"
               }`}
             >
-              <span aria-hidden>{STEP_TITLES[i] ?? `${i + 1}`}</span> {s.title}
+              <span
+                aria-hidden
+                className="grid h-[18px] w-[18px] place-items-center rounded-full bg-white/25 text-[11px] font-bold leading-none"
+              >
+                {i + 1}
+              </span>{" "}
+              {s.title}
             </span>
             {i < steps.length - 1 ? <span aria-hidden className="text-muted">›</span> : null}
           </li>
         ))}
         <li className="flex items-center gap-2">
           <span className={`flex h-7 items-center rounded-pill px-3 text-[12px] font-semibold ${isCheck ? "bg-primary text-on-primary" : "border border-border text-muted"}`}>
-            ✔ Check
+            Check
           </span>
         </li>
       </ol>
@@ -178,5 +182,15 @@ function CheckAnswers({ steps }: { steps: WizardStep[] }) {
         Something wrong? Tap ‹ Back to change any line.
       </div>
     </dl>
+  );
+}
+
+
+/** Dependency-free done glyph (ui package carries no icon deps). */
+function DoneGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ display: "inline" }}>
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
   );
 }

@@ -76,15 +76,57 @@ const tones: Record<StatusTone, string> = {
 
 /** StatusPill — paid / partial / due / overdue states, colorblind-safe (icon + text). */
 export function StatusPill({ tone, children }: { tone: StatusTone; children: React.ReactNode }) {
-  const icon = tone === "ok" ? "✓" : tone === "warn" ? "!" : tone === "danger" ? "✕" : "•";
   return (
     <span
       className={cn("inline-flex items-center gap-1 rounded-sm px-2.5 py-1 text-xs font-semibold", tones[tone])}
       aria-label={String(children)}
     >
-      <span aria-hidden>{icon}</span>
+      <PillIcon tone={tone} />
       {children}
     </span>
+  );
+}
+
+/** StatusPill's leading mark — real vector glyphs, never text dingbats. */
+function PillIcon({ tone }: { tone: StatusTone }) {
+  const common = {
+    viewBox: "0 0 24 24",
+    width: 11,
+    height: 11,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 3.5,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+    style: { flexShrink: 0 },
+  };
+  if (tone === "ok") {
+    return (
+      <svg {...common}>
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
+    );
+  }
+  if (tone === "danger") {
+    return (
+      <svg {...common} strokeWidth={3}>
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
+    );
+  }
+  if (tone === "warn") {
+    return (
+      <svg {...common} strokeWidth={3}>
+        <path d="M12 5v9" />
+        <circle cx="12" cy="19" r="0.5" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common} strokeWidth={0}>
+      <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" />
+    </svg>
   );
 }
 

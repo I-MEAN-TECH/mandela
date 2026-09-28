@@ -90,7 +90,7 @@ export function InstallPrompt() {
       {showIos && !deferred ? (
         <p className="min-w-0 flex-1 text-[12.5px] text-ink-800">
           <span className="font-semibold">Put school on your home screen:</span>{" "}
-          tap <span aria-hidden>⎋ </span><strong>Share</strong>, then{" "}
+          tap <strong>Share</strong>, then{" "}
           <strong>Add to Home Screen</strong>. It opens full-screen, like an app.
         </p>
       ) : (

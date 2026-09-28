@@ -1,5 +1,7 @@
 "use client";
 
+import { Check } from "lucide-react";
+
 import { useState, useTransition } from "react";
 import { Button, Wizard } from "@mandela/ui";
 import type { LearnerRow } from "@/lib/api";
@@ -56,7 +58,7 @@ export function PayForm({
                   <span>
                     {l.name} <span className="font-normal text-muted">· {l.class ?? l.admission_no}</span>
                   </span>
-                  {learnerId === l.id ? <span aria-hidden className="text-primary">●</span> : null}
+                  {learnerId === l.id ? <Check aria-hidden size={16} className="shrink-0 text-primary" /> : null}
                 </button>
               ))}
             </div>

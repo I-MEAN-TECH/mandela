@@ -1,5 +1,7 @@
 "use client";
 
+import { Check } from "lucide-react";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardHead, SelectMenu, StatusPill } from "@mandela/ui";
@@ -67,7 +69,7 @@ export function JoinCodeCard({ team }: { team: TeamOverviewData }) {
             );
           }}
         >
-          {copied ? "Copied ✓" : "Copy"}
+          {copied ? <span className="inline-flex items-center gap-1"><Check aria-hidden size={14} /> Copied</span> : "Copy"}
         </Button>
         <Button
           variant="secondary"

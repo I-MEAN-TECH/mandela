@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { ClipboardCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardHead } from "@mandela/ui";
 import { upsertDutyRosterAction, removeDutyRosterAction, emitRosterTasksAction, type DutyRosterRow } from "@/lib/api";
@@ -99,7 +100,11 @@ export function RostersClient({ rows, staff }: { rows: DutyRosterRow[]; staff: {
 
       <div className="lg:col-span-2">
         <Card>
-          <CardHead title="Fold today into Tasks (㊲)" sub="Each of today's slots lands in the assignee's Tasks inbox — idempotent per day" />
+          <CardHead
+            title="Fold today into Tasks"
+            sub="Each of today's slots lands in the assignee's Tasks inbox — idempotent per day"
+            action={<ClipboardCheck aria-hidden size={18} className="text-muted" />}
+          />
           <div className="flex items-center gap-3 px-4 pb-4">
             <Button size="sm" disabled={pending} onClick={() => start(async () => {
               const r = await emitRosterTasksAction();

@@ -183,7 +183,7 @@ export function RouteStrip({ stops, className }: { stops: RouteStop[]; className
               s.ticked ? "border-ok bg-ok-bg text-ok" : "border-border bg-surface text-muted"
             }`}
           >
-            {s.ticked ? "✓" : i + 1}
+            {s.ticked ? <CheckGlyph /> : i + 1}
           </span>
           <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink-950">{s.point}</span>
           {s.pickup_at ? <span className="text-[11.5px] text-muted">{s.pickup_at}</span> : null}
@@ -225,5 +225,15 @@ export function StandingsBars({ rows }: { rows: StandingsRow[] }) {
         </div>
       ))}
     </div>
+  );
+}
+
+
+/** Dependency-free check glyph (ui package carries no icon deps). */
+function CheckGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
   );
 }

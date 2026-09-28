@@ -1,5 +1,7 @@
 "use client";
 
+import { Check } from "lucide-react";
+
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, StatusPill } from "@mandela/ui";
@@ -73,7 +75,7 @@ export function ChannelPrefs({
             <span>
               {o.label} <span className="block text-xs font-normal text-muted">{o.note}</span>
             </span>
-            {channel === o.key ? <span aria-hidden className="text-primary">●</span> : null}
+            {channel === o.key ? <Check aria-hidden size={16} className="shrink-0 text-primary" /> : null}
           </button>
         ))}
       </div>
