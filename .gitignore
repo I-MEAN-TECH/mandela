@@ -4,6 +4,7 @@ out
 dist
 *.tsbuildinfo
 next-env.d.ts
+.turbo/
 .env
 .env*.local
 .DS_Store

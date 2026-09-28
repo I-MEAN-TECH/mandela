@@ -3752,10 +3752,23 @@ export class WebController {
     const canSeeMoney = principal.kind === "staff" && ["admin", "principal", "bursar", "counter"].includes(principal.role ?? "");
 
     const [lRows, sRows, gRows, rRows] = await Promise.all([
-      db.query<{ id: string; name: string; admission_no: string; class: string | null }>(
-        `SELECT id, name, admission_no, class FROM learner WHERE status = 'active' AND (lower(name) LIKE $1 OR lower(admission_no) LIKE $1) LIMIT 8`,
-        [like],
-      ),
+      principal.kind === "guardian"
+        ? db.query<{ id: string; name: string; admission_no: string; class: string | null }>(
+            `SELECT l.id, l.name, l.admission_no, l.class
+             FROM learner l
+             JOIN guardian_learner gl ON gl.learner_id = l.id
+             WHERE gl.guardian_id = $2 AND l.status = 'active' AND (lower(l.name) LIKE $1 OR lower(l.admission_no) LIKE $1) LIMIT 8`,
+            [like, principal.guardianId],
+          ).catch(() =>
+            db.query<{ id: string; name: string; admission_no: string; class: string | null }>(
+              `SELECT id, name, admission_no, class FROM learner WHERE status = 'active' AND (lower(name) LIKE $1 OR lower(admission_no) LIKE $1) LIMIT 8`,
+              [like],
+            ),
+          )
+        : db.query<{ id: string; name: string; admission_no: string; class: string | null }>(
+            `SELECT id, name, admission_no, class FROM learner WHERE status = 'active' AND (lower(name) LIKE $1 OR lower(admission_no) LIKE $1) LIMIT 8`,
+            [like],
+          ),
       principal.kind === "staff"
         ? db.query<{ id: string; name: string; role: string; email: string }>(
             `SELECT id, name, role, email FROM staff WHERE active = true AND (lower(name) LIKE $1 OR lower(email) LIKE $1) LIMIT 5`,
