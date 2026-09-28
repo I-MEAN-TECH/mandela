@@ -61,6 +61,9 @@ export const SQL_PATHS = {
   schoolPerfIndexes: path.join(BACKEND_ROOT, "db", "school", "046_perf_indexes.sql"),
   schoolRolePulse: path.join(BACKEND_ROOT, "db", "school", "047_role_pulse.sql"),
   schoolPaymentDetails: path.join(BACKEND_ROOT, "db", "school", "048_payment_details.sql"),
+  schoolWave2Visibility: path.join(BACKEND_ROOT, "db", "school", "049_wave2_visibility.sql"),
+  schoolDriverTransportRead: path.join(BACKEND_ROOT, "db", "school", "050_driver_transport_read.sql"),
+  schoolPulseCrossRoleReads: path.join(BACKEND_ROOT, "db", "school", "051_pulse_cross_role_reads.sql"),
 } as const;
 
 const envSchema = z.object({

@@ -14,7 +14,7 @@ export default async function EventsPage() {
   const me = await requireSession();
   if (!me) redirect("/login");
   if (me.principal.kind !== "staff") redirect("/app");
-  if (!["admin", "principal", "teacher"].includes(me.principal.role ?? "")) redirect("/app");
+  if (!["admin", "principal", "teacher", "dorm_parent", "janitor", "librarian", "patron", "hod"].includes(me.principal.role ?? "")) redirect("/app");
   await requireBootstrap();
 
   const data = await getEvents();

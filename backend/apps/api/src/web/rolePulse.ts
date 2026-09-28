@@ -780,13 +780,17 @@ export async function hodPulse(dbName: string, principal: Extract<Principal, { k
     const teacher = await teacherPulseInner(c, principal, dbName);
     // Department proxy (no dept entity exists): the learning area this HOD
     // teaches most. Overlay hides when they teach nothing.
-    const dept = await c.query<{ area_name: string }>(
-      `SELECT area_name FROM timetable_slot
+    const dept = await c.query<{ area_name: string; area_code: string | null }>(
+      `SELECT area_name, MAX(area_code) AS area_code FROM timetable_slot
        WHERE teacher_id = $1 AND area_name IS NOT NULL
        GROUP BY area_name ORDER BY COUNT(*) DESC LIMIT 1`,
       [principal.userId],
     );
     const deptArea = dept.rows[0]?.area_name ?? null;
+    // Assessments key by subject CODE (e.g. "MAT"), slots by area NAME
+    // ("Mathematics") — map through the timetable's own code↔name pair so the
+    // dept overlay reads real marks instead of empty sets when they differ.
+    const deptCode = dept.rows[0]?.area_code ?? null;
     const empty = {
       staff_notice: notice,
       dept_area: deptArea,
@@ -810,9 +814,13 @@ export async function hodPulse(dbName: string, principal: Extract<Principal, { k
     const total = Number(coverage.rows[0]?.total ?? 0);
     const coveredN = Number(coverage.rows[0]?.covered ?? 0);
     const termCte = `(SELECT id FROM term WHERE CURRENT_DATE BETWEEN starts_on AND ends_on LIMIT 1)`;
+    // Match either the area NAME or its CODE so both slot and assessment
+    // vocabularies resolve ("Mathematics" slots vs "MAT" subjects).
+    const subjectMatch = deptCode ? `subject IN ($1, $2)` : `subject = $1`;
+    const subjectParams: string[] = deptCode ? [deptArea, deptCode] : [deptArea];
     const unmarked = await c.query<{ n: string }>(
-      `SELECT COUNT(*)::text AS n FROM assessment WHERE subject = $1 AND score IS NULL AND term_id = ${termCte}`,
-      [deptArea],
+      `SELECT COUNT(*)::text AS n FROM assessment WHERE ${subjectMatch} AND score IS NULL AND term_id = ${termCte}`,
+      subjectParams,
     );
     const means = await c.query<{ subject: string; mean: string }>(
       `SELECT subject, ROUND(AVG(score)::numeric, 1)::text AS mean
@@ -820,11 +828,11 @@ export async function hodPulse(dbName: string, principal: Extract<Principal, { k
        GROUP BY subject ORDER BY 2::numeric DESC LIMIT 8`,
     );
     const byTeacher = await c.query<{ teacher: string; n: string }>(
-      `SELECT s.full_name AS teacher, COUNT(*)::text AS n
-       FROM assessment a JOIN staff s ON s.id = a.recorded_by
-       WHERE a.subject = $1 AND a.score IS NULL AND a.term_id = ${termCte}
-       GROUP BY s.full_name ORDER BY 2 DESC LIMIT 6`,
-      [deptArea],
+      `SELECT COALESCE(s.full_name, 'Staff') AS teacher, COUNT(*)::text AS n
+       FROM assessment a LEFT JOIN staff s ON s.id = a.recorded_by
+       WHERE ${deptCode ? "a.subject IN ($1, $2)" : "a.subject = $1"} AND a.score IS NULL AND a.term_id = ${termCte}
+       GROUP BY 1 ORDER BY 2 DESC LIMIT 6`,
+      subjectParams,
     );
     const gaps = await c.query<HodPulse["gaps_today"][number]>(
       `SELECT cl.name AS class, ts.period, ts.area_name
@@ -834,7 +842,7 @@ export async function hodPulse(dbName: string, principal: Extract<Principal, { k
       [deptArea],
     );
     const meansRows = means.rows.map((r) => ({ subject: r.subject, mean: Number(r.mean) }));
-    const deptRow = meansRows.find((m) => m.subject === deptArea);
+    const deptRow = meansRows.find((m) => m.subject === deptArea || (deptCode && m.subject === deptCode));
     const schoolMean = meansRows.length
       ? Math.round((meansRows.reduce((a, m) => a + m.mean, 0) / meansRows.length) * 10) / 10
       : null;

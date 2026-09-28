@@ -23,7 +23,7 @@ import {
 
 const KINDS = ["lab", "sports", "drama", "music", "club", "mess", "security", "infirmary", "library", "store", "transport", "house"] as const;
 
-export function SectionsClient({ rows, staff }: { rows: SectionRow[]; staff: StaffRow[]; canManage: boolean }) {
+export function SectionsClient({ rows, staff, canManage = true }: { rows: SectionRow[]; staff: StaffRow[]; canManage?: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [showForm, setShowForm] = useState(false);
@@ -58,11 +58,11 @@ export function SectionsClient({ rows, staff }: { rows: SectionRow[]; staff: Sta
         <CardHead
           title="The register"
           sub="Every section is a row — same engine, same four capabilities. Tap a section to open its register, sessions and kit."
-          action={
+          action={canManage ? (
             <Button variant="primary" onClick={() => setShowForm((v) => !v)}>
               {showForm ? "Close" : "+ New section"}
             </Button>
-          }
+          ) : undefined}
         />
 
         {showForm ? (
@@ -124,13 +124,15 @@ export function SectionsClient({ rows, staff }: { rows: SectionRow[]; staff: Sta
                     <Money cents={s.kit_value_cents} className="text-[13px]" />
                   </div>
                 </button>
-                <button
-                  type="button"
-                  className="self-start text-xs text-muted hover:text-text"
-                  onClick={() => toggle(s.id, !s.enabled)}
-                >
-                  {s.enabled ? "disable" : "enable"}
-                </button>
+                {canManage ? (
+                  <button
+                    type="button"
+                    className="self-start text-xs text-muted hover:text-text"
+                    onClick={() => toggle(s.id, !s.enabled)}
+                  >
+                    {s.enabled ? "disable" : "enable"}
+                  </button>
+                ) : null}
               </div>
             ))}
           </div>

@@ -15,12 +15,13 @@ export default async function SectionsPage() {
   const me = await requireSession();
   if (!me) redirect("/login");
   if (me.principal.kind !== "staff") redirect("/app");
-  if (!["admin", "principal"].includes(me.principal.role ?? "")) redirect("/app");
+  if (!["admin", "principal", "dorm_parent", "janitor", "librarian", "patron", "hod"].includes(me.principal.role ?? "")) redirect("/app");
   await requireBootstrap();
 
   const [sections, staff] = await Promise.all([getSections(), getStaffDirectory()]);
   const rows = "rows" in sections ? sections.rows : [];
   const staffRows = "staff" in staff ? staff.staff : [];
+  const canManage = ["admin", "principal"].includes(me.principal.role ?? "");
 
   const enabled = rows.filter((r) => r.enabled).length;
   const noPatron = rows.filter((r) => r.enabled && !r.head_staff_id).length;
@@ -48,7 +49,7 @@ export default async function SectionsPage() {
         <KpiCard label="Kit value tagged" value={<Money cents={kitValue} />} note="Equipment & consumables" />
       </div>
 
-      <SectionsClient rows={rows} staff={staffRows} canManage />
+      <SectionsClient rows={rows} staff={staffRows} canManage={canManage} />
     </div>
   );
 }

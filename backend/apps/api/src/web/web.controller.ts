@@ -638,7 +638,7 @@ export class WebController {
     const tenant = await tenantFromReq(req);
     const principal = principalFromReq(req);
     if (!principal || principal.kind !== "staff") return { error: "staff session required" };
-    if (!["admin", "principal", "counter"].includes(principal.role ?? "")) {
+    if (!["admin", "principal", "counter", "dorm_parent", "janitor", "librarian", "patron", "hod"].includes(principal.role ?? "")) {
       return { ok: false, error: "Only admin, principal or counter can log admissions" };
     }
     return web.createInquiry(tenant.dbName, principal, input);
@@ -653,7 +653,7 @@ export class WebController {
     const tenant = await tenantFromReq(req);
     const principal = principalFromReq(req);
     if (!principal || principal.kind !== "staff") return { error: "staff session required" };
-    if (!["admin", "principal", "counter"].includes(principal.role ?? "")) {
+    if (!["admin", "principal", "counter", "dorm_parent", "janitor", "librarian", "patron", "hod"].includes(principal.role ?? "")) {
       return { ok: false, error: "Only admin, principal or counter can move the funnel" };
     }
     return web.moveInquiryStage(tenant.dbName, principal, input);

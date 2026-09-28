@@ -87,7 +87,7 @@ function tabToHref(tab: string, first: string): string {
     Mark: "/app/mark",
     Class: "/app/class",
     Spend: "/app/people/payroll",
-    Care: "/app/operations/hostel",
+    Care: "/app/people/conduct",
     Collect: "/app/money",
     Reconcile: "/app/reconcile",
     Levies: "/app/levies",
@@ -100,6 +100,19 @@ function tabToHref(tab: string, first: string): string {
     Money: "/app/money",
     Academics: "/app/academics",
     Settings: "/app/settings",
+    // Phase 6 role tabs — every sidebar label resolves to a real module.
+    Hostel: "/app/operations/hostel",
+    Facilities: "/app/operations/facilities",
+    Store: "/app/operations/store",
+    Library: "/app/operations/library",
+    Sections: "/app/operations/sections",
+    Houses: "/app/operations/houses",
+    Events: "/app/operations/events",
+    Calendar: "/app/operations/events",
+    Exams: "/app/academics/exams",
+    Transport: "/app/operations/transport",
+    Visitors: "/app/operations/security",
+    Inquiries: "/app/people/admissions",
   };
   if (tab === first) return "/app";
   return map[tab] ?? `/app/${tab.toLowerCase()}`;
