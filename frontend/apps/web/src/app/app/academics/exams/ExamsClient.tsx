@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardHead, StatusPill } from "@mandela/ui";
 import {
@@ -197,11 +197,32 @@ export function ApprovalQueue({ pending, canApprove }: {
   );
 }
 
-export function GenerateCard({ learners }: { learners: { id: string; name: string }[] }) {
+/**
+ * Generate report card — a filterable learner LIST, not a dropdown: with
+ * hundreds or thousands of learners, class filter + name/reg-no search
+ * finds anyone in a couple of keystrokes. Click a row to select, generate
+ * from the sticky footer.
+ */
+export function GenerateCard({ learners }: { learners: { id: string; name: string; admissionNo: string; cls: string | null }[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [learnerId, setLearnerId] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [cls, setCls] = useState("");
+  const [q, setQ] = useState("");
+
+  const classNames = useMemo(
+    () => [...new Set(learners.map((l) => l.cls).filter((n): n is string => !!n))].sort(),
+    [learners],
+  );
+  const needle = q.trim().toLowerCase();
+  const filtered = learners.filter(
+    (l) =>
+      (!cls || l.cls === cls) &&
+      (!needle || l.name.toLowerCase().includes(needle) || l.admissionNo.toLowerCase().includes(needle)),
+  );
+  const shown = filtered.slice(0, 200);
+  const selected = learners.find((l) => l.id === learnerId) ?? null;
 
   return (
     <Card>
@@ -209,37 +230,91 @@ export function GenerateCard({ learners }: { learners: { id: string; name: strin
         title="Generate report card"
         sub="Scores + attendance + the curriculum's own vocabulary and scale — one card per learner, per term."
       />
-      <form
-        className="flex flex-wrap items-end gap-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!learnerId) return;
-          start(async () => {
-            const r = await generateReportCardAction({ learnerId });
-            setMsg(r.ok ? { ok: true, text: "Card generated — waiting for approval" } : { ok: false, text: r.error ?? "Failed" });
-            if (r.ok) router.refresh();
-          });
-        }}
-      >
-        <label className="flex min-w-[240px] flex-1 flex-col gap-1">
-          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-500">Learner *</span>
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search name or reg no…"
+            aria-label="Search learners by name or registration number"
+            className="h-10 w-full rounded-sm border border-paper-300 bg-surface px-3 text-[13.5px] text-ink-950 outline-none focus:border-pine-400"
+          />
           <select
-            value={learnerId}
-            onChange={(e) => setLearnerId(e.target.value)}
-            required
-            className="h-10 rounded-sm border border-paper-300 bg-surface px-3 text-[13.5px] text-ink-950"
+            aria-label="Filter by class"
+            value={cls}
+            onChange={(e) => setCls(e.target.value)}
+            className="h-10 rounded-sm border border-paper-300 bg-surface px-2.5 text-[13px] text-ink-950"
           >
-            <option value="">Choose…</option>
-            {learners.map((l) => (
-              <option key={l.id} value={l.id}>{l.name}</option>
+            <option value="">All classes</option>
+            {classNames.map((n) => (
+              <option key={n} value={n}>{n}</option>
             ))}
           </select>
-        </label>
-        <Button type="submit" variant="secondary" disabled={pending || !learnerId}>Generate</Button>
+        </div>
+
+        <div className="max-h-[340px] overflow-y-auto rounded-sm border border-paper-200" role="listbox" aria-label="Learners">
+          {shown.length === 0 ? (
+            <p className="px-3 py-6 text-center text-[13px] text-ink-500">
+              {learners.length === 0 ? "No active learners yet." : "No learners match — clear the search or pick another class."}
+            </p>
+          ) : (
+            shown.map((l) => {
+              const isSel = l.id === learnerId;
+              return (
+                <button
+                  key={l.id}
+                  type="button"
+                  role="option"
+                  aria-selected={isSel}
+                  onClick={() => setLearnerId(isSel ? "" : l.id)}
+                  className={`flex w-full items-center justify-between gap-3 border-b border-paper-100 px-3 py-2.5 text-left transition-colors last:border-b-0 ${
+                    isSel ? "bg-pine-700/10" : "hover:bg-paper-50"
+                  }`}
+                >
+                  <span className="min-w-0">
+                    <span className={`block truncate text-[13px] font-semibold ${isSel ? "text-pine-700" : "text-ink-950"}`}>{l.name}</span>
+                    <span className="block truncate text-[11.5px] text-ink-500">{l.admissionNo}{l.cls ? ` · ${l.cls}` : ""}</span>
+                  </span>
+                  {isSel ? <span aria-hidden className="text-[12px] font-bold text-pine-700">✓</span> : null}
+                </button>
+              );
+            })
+          )}
+        </div>
+        {filtered.length > shown.length ? (
+          <p className="text-[11.5px] text-muted">Showing first {shown.length} of {filtered.length} — narrow with the search or class filter.</p>
+        ) : (
+          <p className="text-[11.5px] text-muted">{filtered.length} learner{filtered.length === 1 ? "" : "s"}</p>
+        )}
+
+        <form
+          className="flex items-center gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!learnerId) return;
+            start(async () => {
+              const r = await generateReportCardAction({ learnerId });
+              setMsg(r.ok ? { ok: true, text: "Card generated — waiting for approval" } : { ok: false, text: r.error ?? "Failed" });
+              if (r.ok) router.refresh();
+            });
+          }}
+        >
+          <Button type="submit" variant="primary" disabled={pending || !learnerId}>
+            {pending ? "Generating…" : selected ? `Generate for ${selected.name}` : "Generate"}
+          </Button>
+          {selected ? (
+            <span className="min-w-0 truncate text-[12px] text-ink-500">
+              {selected.name} · {selected.admissionNo}{selected.cls ? ` · ${selected.cls}` : ""}
+            </span>
+          ) : (
+            <span className="text-[12px] text-muted">Pick a learner from the list above.</span>
+          )}
+        </form>
         {msg ? (
           <p className={msg.ok ? "text-[12.5px] text-pine-700" : "text-[12.5px] text-danger"} role="status">{msg.text}</p>
         ) : null}
-      </form>
+      </div>
     </Card>
   );
 }

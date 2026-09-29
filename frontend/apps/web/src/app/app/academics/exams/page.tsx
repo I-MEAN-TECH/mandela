@@ -31,8 +31,7 @@ export default async function ExamsPage() {
   const learnerList = learners.learners
     .filter((l) => l.status === "active")
     .filter((l) => !isTeacher || (l.class !== null && scopedNames.has(l.class)))
-    .slice(0, 300)
-    .map((l) => ({ id: l.id, name: `${l.name} · ${l.admission_no}` }));
+    .map((l) => ({ id: l.id, name: l.name, admissionNo: l.admission_no, cls: l.class }));
 
   return (
     <div>
