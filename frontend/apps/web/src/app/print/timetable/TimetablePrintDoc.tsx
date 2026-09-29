@@ -73,13 +73,24 @@ export function TimetablePrintDoc({
                   >
                     {slot ? (
                       kind ? (
-                        <span className="block font-semibold text-ink-700">{KIND_LABEL[kind] ?? slot.area_name ?? "Break"}</span>
+                        <>
+                          <span className="block font-semibold text-ink-700">{KIND_LABEL[kind] ?? slot.area_name ?? "Break"}</span>
+                          {slot.starts_at ? (
+                            <span className="block font-mono text-[10.5px] text-ink-600">
+                              {slot.starts_at}{slot.ends_at ? `–${slot.ends_at}` : ""}
+                            </span>
+                          ) : null}
+                        </>
                       ) : (
                         <>
                           <span className="block font-semibold">{slot.area_name ?? "—"}</span>
+                          {slot.starts_at ? (
+                            <span className="block font-mono text-[10.5px] text-ink-700">
+                              {slot.starts_at}{slot.ends_at ? `–${slot.ends_at}` : ""}
+                            </span>
+                          ) : null}
                           <span className="block text-[11px] text-ink-600">
                             {slot.teacher_name ?? "—"}{slot.room ? ` · ${slot.room}` : ""}
-                            {slot.starts_at ? ` · ${slot.starts_at}${slot.ends_at ? `–${slot.ends_at}` : ""}` : ""}
                           </span>
                         </>
                       )

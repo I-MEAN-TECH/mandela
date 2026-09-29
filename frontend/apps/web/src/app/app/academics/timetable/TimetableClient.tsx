@@ -151,12 +151,24 @@ export function TimetableClient({ data, canEdit }: { data: TimetableData; canEdi
                             }`}
                           >
                             {isBreak ? (
-                              <span className={`inline-block rounded-pill px-2 py-0.5 text-[11px] font-bold ${meta?.chip ?? ""}`}>
-                                {meta?.label ?? slot.area_name ?? "Break"}
-                              </span>
+                              <>
+                                <span className={`inline-block rounded-pill px-2 py-0.5 text-[11px] font-bold ${meta?.chip ?? ""}`}>
+                                  {meta?.label ?? slot.area_name ?? "Break"}
+                                </span>
+                                {slot.starts_at ? (
+                                  <span className="mt-1 block truncate font-mono text-[10.5px] text-ink-500">
+                                    {slot.starts_at}{slot.ends_at ? `–${slot.ends_at}` : ""}
+                                  </span>
+                                ) : null}
+                              </>
                             ) : (
                               <>
                                 <span className="block truncate text-[12.5px] font-semibold text-ink-950">{slot.area_name ?? "—"}</span>
+                                {slot.starts_at ? (
+                                  <span className="block truncate font-mono text-[10.5px] text-pine-700">
+                                    {slot.starts_at}{slot.ends_at ? `–${slot.ends_at}` : ""}
+                                  </span>
+                                ) : null}
                                 <span className="block truncate text-[11px] text-ink-500">{slot.teacher_name ?? "no teacher"}{slot.room ? ` · ${slot.room}` : ""}</span>
                               </>
                             )}
