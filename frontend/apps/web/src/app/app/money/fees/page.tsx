@@ -67,7 +67,7 @@ export default async function FeeStructuresPage() {
           <KpiCard ink label="Avg fee per learner" value={<Money cents={avgFee} />} note={`${learnersCharged} ${noun(learnersCharged, "learner")} billed`} />
         </div>
 
-        <div className="grid gap-s3h xl:grid-cols-[1fr_360px]">
+        <div className="grid gap-s3h">
           <Card className="min-w-0">
             <CardHead title="Fee structures" sub={`${fees.currentTerm.label} · per-learner amounts`} />
             {rows.length === 0 ? (
@@ -109,7 +109,7 @@ export default async function FeeStructuresPage() {
           </div>
         </div>
 
-        <div className="grid gap-s3h xl:grid-cols-2">
+        <div className="grid gap-s3h">
           <Card className="min-w-0">
             <CardHead title="Sibling discounts" sub="Family money — the Nth child pays less" />
             {discounts.length === 0 ? (
@@ -134,7 +134,7 @@ export default async function FeeStructuresPage() {
           <DiscountForm classes={classList} />
         </div>
 
-        <div className="grid gap-s3h xl:grid-cols-2">
+        <div className="grid gap-s3h">
           <Card className="min-w-0">
             <CardHead title="Instalment plans" sub="Live plans this term · what's paid vs scheduled" />
             {plans.length === 0 ? (

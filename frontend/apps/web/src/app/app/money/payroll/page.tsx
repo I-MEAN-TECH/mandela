@@ -61,7 +61,7 @@ export default async function PayrollPage() {
           <KpiCard label="Disbursed this run" value={<Money cents={paidThisPeriod} />} note={latestRun?.disbursed_how ? `via ${latestRun.disbursed_how}` : "awaiting disbursement"} />
         </div>
 
-        <div className="grid gap-s3h xl:grid-cols-[1fr_380px]">
+        <div className="grid gap-s3h">
           <div className="flex min-w-0 flex-col gap-s3h">
             {detail && !("error" in detail) ? (
               <RunDetail run={detail.run} slips={detail.slips} isAdmin={isAdmin} canPrepare />

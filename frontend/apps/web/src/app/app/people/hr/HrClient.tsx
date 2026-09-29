@@ -67,7 +67,7 @@ export function HrClient({ data, staff, canDecide }: { data: HrData; staff: { id
         )}
       </Card>
 
-      <div className="grid gap-s4 xl:grid-cols-2">
+      <div className="grid gap-s4">
         <Card>
           <CardHead title="Out today" sub="Approved leave covering today — plan cover lessons around these names" />
           {data.onLeaveToday.length === 0 ? (

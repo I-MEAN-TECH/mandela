@@ -91,7 +91,7 @@ export function HostelClient({
   };
 
   return (
-    <div className="grid gap-s4 xl:grid-cols-2">
+    <div className="grid gap-s4">
       <Card>
         <CardHead title="Dorms" sub="Capacity vs allocated, live." />
         {dorms.length === 0 ? (

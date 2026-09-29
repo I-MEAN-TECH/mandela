@@ -45,7 +45,14 @@ Fail closed in production, harden edge/runtime settings, upgrade dependencies, a
 
 ## Next Step
 
-Keep Library Counter and Overdue in one vertical column for clearer desk work.
+Stack operational content cards across the app while preserving KPIs, charts,
+graphs, tables, and form grids.
+
+### Phase 14: Operational card columns
+**Status:** complete
+
+Remove multi-column layout only from outer groups of sibling content cards;
+leave all KPI, data visualization, table, and form arrangements unchanged.
 
 ### Phase 13: Library desk column layout
 **Status:** complete

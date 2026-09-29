@@ -41,7 +41,7 @@ export default async function RailsPage() {
           <KpiCard label="Manual-entry share" value={`${rails.stats.manualShare}%`} note="kept visible — the hand still leads" />
         </div>
 
-        <div className="grid gap-s3h xl:grid-cols-[1fr_380px]">
+        <div className="grid gap-s3h">
           <RailsQueue rows={rails.suggestions} learners={learnerList} />
           <div className="flex flex-col gap-s3h">
             <CsvImportCard />

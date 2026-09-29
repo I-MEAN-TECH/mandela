@@ -41,7 +41,7 @@ export function VaultClient({
 
   return (
     <>
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4">
         <Card>
           <CardHead title="Issued documents" sub="The vault register — every issue numbered and audited" />
           <div className="flex max-h-[420px] flex-col divide-y divide-paper-200 overflow-y-auto">

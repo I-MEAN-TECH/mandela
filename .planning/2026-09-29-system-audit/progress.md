@@ -53,6 +53,7 @@
 - 2026-09-29: Phase 12 implementation replaces the partitioned admissions funnel with a searchable/filterable register. Existing stage progression, enrolment dialog, and Lost action remain per row; new filters use only inquiry fields already returned by the API.
 - 2026-09-29: Phase 12 complete. Admissions filter contract, TypeScript, bundle budget, theme policy, whitespace, production build, and local production login response passed. Production web server restarted on port 3000.
 - 2026-09-29: Phase 13 complete. Library Counter and Overdue now use a single vertical column at all viewport sizes. Typecheck, bundle budget, theme policy, and whitespace validation passed.
+- 2026-09-29: Phase 14 complete. Stacked direct operational-card groups across Operations, Money, People HR, and Settings while preserving KPI cards, charts/graphs, tables, and field-grid layouts. Typecheck, bundle budget, theme policy, whitespace, production build, and live localhost response passed.
 
 ## Errors Encountered
 

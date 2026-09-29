@@ -58,7 +58,7 @@ export function BoardClient({
   };
 
   return (
-    <div className="grid gap-s4 xl:grid-cols-2">
+    <div className="grid gap-s4">
       <Card>
         <CardHead title="Members" sub="Offices and term expiries — the expiry chip is the renewal nudge." />
         {members.length === 0 ? (

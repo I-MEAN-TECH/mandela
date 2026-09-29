@@ -48,7 +48,7 @@ export function VisitorDesk({ rows }: { rows: VisitorRow[] }) {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+    <div className="grid gap-6">
       <Card className="min-w-0">
         <CardHead title="Visitor book" sub="Last 7 days — the record the county inspector asks for." />
         {rows.length === 0 ? (

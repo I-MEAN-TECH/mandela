@@ -285,3 +285,7 @@ Post-fix numbers above; regression gates all re-green after the fix.
 ### Library desk column layout (2026-09-29) — complete
 
 - [x] Stack Counter and Overdue cards vertically for a clearer library desk.
+
+### Operational card columns (2026-09-29) — complete
+
+- [x] Stack non-KPI, non-chart, non-table operational card groups vertically.

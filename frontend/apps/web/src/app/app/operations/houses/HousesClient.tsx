@@ -61,7 +61,7 @@ export function HousesClient({ houses, sections, fees, competitions }: {
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4">
       <Card>
         <CardHead title="House points" sub="The standings — tap a house to award or deduct points" />
         <div className="flex flex-col divide-y divide-paper-200">

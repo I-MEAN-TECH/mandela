@@ -37,7 +37,7 @@ export function RostersClient({ rows, staff }: { rows: DutyRosterRow[]; staff: {
   const active = rows.filter((x) => x.active);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+    <div className="grid gap-4">
       <Card>
         <CardHead title="This week" sub="Grouped by day · remove ends a slot" />
         <div className="flex flex-col gap-4">

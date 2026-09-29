@@ -107,7 +107,7 @@ export function SectionsClient({ rows, staff, canManage = true }: { rows: Sectio
             body="Create the school's first section — a lab, a sports team, the drama club. Each gets a patron, a register, sessions and kit."
           />
         ) : (
-          <div className="grid gap-s4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-s4">
             {rows.map((s) => (
               <div key={s.id} className="flex flex-col gap-s2 rounded-lg border border-border bg-surface p-s4">
                 <button type="button" onClick={() => setOpenId(s.id)} className="flex flex-col gap-s2 text-left">

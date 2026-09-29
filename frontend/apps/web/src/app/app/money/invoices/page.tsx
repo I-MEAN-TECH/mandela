@@ -49,7 +49,7 @@ export default async function InvoicesPage() {
           <KpiCard label="Cleared" value={`${clearedPct}%`} note={`${cleared} of ${rows.length} accounts at zero`} />
         </div>
 
-        <div className="grid gap-s3h xl:grid-cols-[1fr_360px]">
+        <div className="grid gap-s3h">
           <Card className="min-w-0">
             <CardHead title="Learner ledgers" sub={`${invoices.term} · billed − paid = balance · FIFO waterfall, always in order`} />
             {rows.length === 0 ? (

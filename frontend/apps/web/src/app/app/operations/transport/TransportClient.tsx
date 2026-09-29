@@ -74,7 +74,7 @@ export function TransportClient({
   };
 
   return (
-    <div className="grid gap-s4 xl:grid-cols-2">
+    <div className="grid gap-s4">
       <Card>          <CardHead title="Routes" sub="Term fee rides Money as a levy — never cash at the gate." />
         {routes.length === 0 ? (
           <EmptyState title="No routes yet" body="Add the first route — name and term fee per rider." />

@@ -65,7 +65,7 @@ export function SwitchImportClient({ imports }: { imports: SwitchingImportRow[] 
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="grid gap-4">
       <Card>
         <CardHead title="1 · Submit their sheet" sub="Upload the file (browse or drag-drop) or paste rows. First line = headers. Recognised: name columns, class, gender, boarding, guardian phone."
           action={<Button size="sm" variant="secondary" onClick={() => uploadFromText(SWITCH_TEMPLATE, "csv-file", "sample-switch.csv")}>Try with sample data</Button>} />
