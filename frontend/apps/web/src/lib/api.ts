@@ -1651,11 +1651,13 @@ export interface SlotRow {
   day_of_week: number; period: number; starts_at: string | null; ends_at: string | null;
   area_code: string | null; area_name: string | null;
   teacher_id: string | null; teacher_name: string | null; room: string | null; active: boolean;
+  slot_kind: string;
 }
 export interface TimetableData {
   slots: SlotRow[];
-  classes: { id: number; code: string; name: string }[];
+  classes: { id: number; code: string; name: string; level_id: number | null }[];
   teachers: { id: string; name: string }[];
+  areasByClass?: Record<string, { code: string; name: string }[]>;
 }
 export async function getTimetable() {
   return read<TimetableData | { error: string }>("/web/admin/timetable", { error: "unavailable" });
@@ -1665,6 +1667,7 @@ export async function upsertSlotAction(input: {
   startsAt?: string | null; endsAt?: string | null;
   areaCode?: string | null; areaName?: string | null;
   teacherId?: string | null; room?: string | null;
+  slotKind?: string | null;
 }) {
   return mutate("/web/admin/timetable/slot", input);
 }

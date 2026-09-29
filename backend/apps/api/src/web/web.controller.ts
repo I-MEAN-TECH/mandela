@@ -2265,6 +2265,7 @@ export class WebController {
         areaName: z.string().nullable().optional(),
         teacherId: z.string().uuid().nullable().optional(),
         room: z.string().nullable().optional(),
+        slotKind: z.enum(["lesson", "tea", "lunch", "games", "home"]).nullable().optional(),
       })
       .parse(body);
     const tenant = await tenantFromReq(req);

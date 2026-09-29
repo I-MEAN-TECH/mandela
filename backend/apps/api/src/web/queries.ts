@@ -1309,7 +1309,8 @@ export async function autolayoutTimetable(
       // Areas this class already teaches (kept from the pack or manual setup).
       const areas = await c.query<{ area_name: string; periods_needed: string }>(
         `SELECT area_name, COUNT(*)::text AS periods_needed
-         FROM timetable_slot WHERE class_id = $1 AND area_name IS NOT NULL
+         FROM timetable_slot
+         WHERE class_id = $1 AND area_name IS NOT NULL AND slot_kind = 'lesson'
          GROUP BY area_name`,
         [cl.id],
       );
@@ -1321,11 +1322,19 @@ export async function autolayoutTimetable(
          WHERE class_id = $1 AND active AND teacher_id IS NOT NULL`,
         [cl.id],
       );
+      // Breaks (tea/lunch/games/home) are fixed structure — never gaps to fill.
       const gaps = await c.query<{ id: string; day_of_week: number; period: number; area_name: string | null; teacher_id: string | null }>(
         `SELECT id::text, day_of_week, period, area_name, teacher_id::text
-         FROM timetable_slot WHERE class_id = $1 AND active`,
+         FROM timetable_slot WHERE class_id = $1 AND active AND slot_kind = 'lesson'`,
         [cl.id],
       );
+      // Non-lesson cells are occupied day structure — lessons never land there.
+      const structure = await c.query<{ day_of_week: number; period: number }>(
+        `SELECT day_of_week, period FROM timetable_slot
+         WHERE class_id = $1 AND active AND slot_kind <> 'lesson'`,
+        [cl.id],
+      );
+      for (const st of structure.rows) taken.add(st.day_of_week + ":" + st.period);
       for (const row of existing.rows) {
         taken.add(row.day_of_week + ":" + row.period);
         if (row.teacher_id) busy.add(row.teacher_id + "@" + row.day_of_week + ":" + row.period);
@@ -6801,27 +6810,41 @@ export interface SlotRow {
   day_of_week: number; period: number; starts_at: string | null; ends_at: string | null;
   area_code: string | null; area_name: string | null;
   teacher_id: string | null; teacher_name: string | null; room: string | null; active: boolean;
+  slot_kind: string;
 }
+
+const NON_LESSON_KINDS = new Set(["tea", "lunch", "games", "home"]);
 
 export async function timetable(
   dbName: string,
   principal: Extract<Principal, { kind: "staff" }>,
-): Promise<{ slots: SlotRow[]; classes: { id: number; code: string; name: string }[]; teachers: { id: string; name: string }[] }> {
+): Promise<{ slots: SlotRow[]; classes: { id: number; code: string; name: string; level_id: number | null }[]; teachers: { id: string; name: string }[]; areasByClass: Record<string, { code: string; name: string }[]> }> {
   return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
     const slots = await c.query<SlotRow>(
       `SELECT ts.id::text, ts.class_id, cl.name AS class_name, cl.code AS class_code,
               ts.day_of_week, ts.period, ts.starts_at, ts.ends_at,
               ts.area_code, ts.area_name, ts.teacher_id::text,
-              s.full_name AS teacher_name, ts.room, ts.active
+              s.full_name AS teacher_name, ts.room, ts.active, ts.slot_kind
        FROM timetable_slot ts
        JOIN class cl ON cl.id = ts.class_id
        LEFT JOIN staff s ON s.id = ts.teacher_id
        ORDER BY cl.code, ts.day_of_week, ts.period`);
-    const classes = await c.query<{ id: number; code: string; name: string }>(
-      `SELECT id, code, name FROM class ORDER BY code`);
+    const classes = await c.query<{ id: number; code: string; name: string; level_id: number | null }>(
+      `SELECT id, code, name, level_id FROM class ORDER BY code`);
     const teachers = await c.query<{ id: string; name: string }>(
       `SELECT id::text AS id, full_name AS name FROM staff WHERE active ORDER BY full_name`);
-    return { slots: slots.rows, classes: classes.rows, teachers: teachers.rows };
+    // Selectable subjects per class: the class's curriculum level learning
+    // areas (all CBC levels seeded; falls through to 8-4-4/british packs).
+    const areas = await c.query<{ class_id: number; code: string; name: string }>(
+      `SELECT cl.id AS class_id, a.code, a.name
+       FROM class cl
+       JOIN learning_area a ON a.level_id = cl.level_id
+       ORDER BY cl.id, a.code`);
+    const areasByClass: Record<string, { code: string; name: string }[]> = {};
+    for (const a of areas.rows) {
+      (areasByClass[a.class_id] ??= []).push({ code: a.code, name: a.name });
+    }
+    return { slots: slots.rows, classes: classes.rows, teachers: teachers.rows, areasByClass };
   });
 }
 
@@ -6835,13 +6858,17 @@ export async function upsertSlot(
   input: { id?: string; classId: number; dayOfWeek: number; period: number;
            startsAt?: string | null; endsAt?: string | null;
            areaCode?: string | null; areaName?: string | null;
-           teacherId?: string | null; room?: string | null },
+           teacherId?: string | null; room?: string | null;
+           slotKind?: string | null },
 ): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   if (principal.role !== "admin" && principal.role !== "principal") throw new Error("leaders edit the grid");
   if (input.dayOfWeek < 1 || input.dayOfWeek > 7) return { ok: false, error: "Day must be 1-7" };
   if (input.period < 1 || input.period > 9) return { ok: false, error: "Period must be 1-9" };
+  const kind = input.slotKind && NON_LESSON_KINDS.has(input.slotKind) ? input.slotKind : "lesson";
   return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
-    if (input.teacherId) {
+    // Non-lesson kinds (tea break, lunch, games, home time) are whole-school
+    // activity: no teacher clash guard applies to them.
+    if (kind === "lesson" && input.teacherId) {
       const clash = await c.query<{ class_name: string }>(
         `SELECT cl.name AS class_name
          FROM timetable_slot ts JOIN class cl ON cl.id = ts.class_id
@@ -6855,12 +6882,15 @@ export async function upsertSlot(
     if (id) {
       const prev = await c.query(`SELECT * FROM timetable_slot WHERE id = $1`, [id]);
       if (!prev.rowCount) return { ok: false, error: "Slot not found" };
+      // A slot changing to a non-lesson kind drops its teacher (breaks are
+      // supervised, not taught) — the teacher is freed up automatically.
+      const nextTeacher = kind === "lesson" ? input.teacherId ?? null : null;
       await c.query(
         `UPDATE timetable_slot SET class_id = $2, day_of_week = $3, period = $4, starts_at = $5, ends_at = $6,
-                area_code = $7, area_name = $8, teacher_id = $9, room = $10
+                area_code = $7, area_name = $8, teacher_id = $9, room = $10, slot_kind = $11
          WHERE id = $1`,
         [id, input.classId, input.dayOfWeek, input.period, input.startsAt ?? null, input.endsAt ?? null,
-         input.areaCode ?? null, input.areaName ?? null, input.teacherId ?? null, input.room ?? null]);
+         input.areaCode ?? null, input.areaName ?? null, nextTeacher, input.room ?? null, kind]);
       await c.query(
         `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, before, after)
          VALUES ($1, 'staff', 'timetable.update', 'timetable_slot', $2, $3, $4)`,
@@ -6870,18 +6900,21 @@ export async function upsertSlot(
         [input.classId, input.dayOfWeek, input.period]);
       if (dup.rowCount) {
         id = dup.rows[0]!.id;
-        await c.query(
-          `UPDATE timetable_slot SET starts_at = $4, ends_at = $5, area_code = $6, area_name = $7,
-                  teacher_id = $8, room = $9, active = true
-           WHERE id = $1 AND class_id = $2 AND day_of_week = $3`,
-          [id, input.classId, input.dayOfWeek, input.startsAt ?? null, input.endsAt ?? null,
-           input.areaCode ?? null, input.areaName ?? null, input.teacherId ?? null, input.room ?? null]);
+      const upd = await c.query(
+        `UPDATE timetable_slot SET starts_at = $4, ends_at = $5, area_code = $6, area_name = $7,
+                teacher_id = $8, room = $9, active = true, slot_kind = $10
+         WHERE id = $1 AND class_id = $2 AND day_of_week = $3`,
+        [id, input.classId, input.dayOfWeek, input.startsAt ?? null, input.endsAt ?? null,
+         input.areaCode ?? null, input.areaName ?? null,
+         kind === "lesson" ? input.teacherId ?? null : null, input.room ?? null, kind]);
+      if (!upd.rowCount) return { ok: false, error: "Slot not found" };
       } else {
         const ins = await c.query<{ id: string }>(
-          `INSERT INTO timetable_slot (class_id, day_of_week, period, starts_at, ends_at, area_code, area_name, teacher_id, room, created_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id::text AS id`,
+          `INSERT INTO timetable_slot (class_id, day_of_week, period, starts_at, ends_at, area_code, area_name, teacher_id, room, slot_kind, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id::text AS id`,
           [input.classId, input.dayOfWeek, input.period, input.startsAt ?? null, input.endsAt ?? null,
-           input.areaCode ?? null, input.areaName ?? null, input.teacherId ?? null, input.room ?? null, principal.userId]);
+           input.areaCode ?? null, input.areaName ?? null,
+           kind === "lesson" ? input.teacherId ?? null : null, input.room ?? null, kind, principal.userId]);
         id = ins.rows[0]!.id;
       }
       await c.query(

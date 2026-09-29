@@ -9,6 +9,14 @@ import type { TimetableData } from "@/lib/api";
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
 
+/** Non-lesson kinds print as shaded, italic day-structure entries. */
+const KIND_LABEL: Record<string, string> = {
+  tea: "Tea break",
+  lunch: "Lunch",
+  games: "Games",
+  home: "Home time",
+};
+
 export function TimetablePrintDoc({
   data,
   classId,
@@ -57,16 +65,24 @@ export function TimetablePrintDoc({
               {DAYS.map((_, di) => {
                 const day = di + 1;
                 const slot = grid.get(`${day}-${period}`);
+                const kind = slot && slot.slot_kind !== "lesson" ? slot.slot_kind : null;
                 return (
-                  <td key={day} className="border border-ink-300 px-2 py-2 align-top">
+                  <td
+                    key={day}
+                    className={`border border-ink-300 px-2 py-2 align-top ${kind ? "bg-paper-100 italic" : ""}`}
+                  >
                     {slot ? (
-                      <>
-                        <span className="block font-semibold">{slot.area_name ?? "—"}</span>
-                        <span className="block text-[11px] text-ink-600">
-                          {slot.teacher_name ?? "—"}{slot.room ? ` · ${slot.room}` : ""}
-                          {slot.starts_at ? ` · ${slot.starts_at}${slot.ends_at ? `–${slot.ends_at}` : ""}` : ""}
-                        </span>
-                      </>
+                      kind ? (
+                        <span className="block font-semibold text-ink-700">{KIND_LABEL[kind] ?? slot.area_name ?? "Break"}</span>
+                      ) : (
+                        <>
+                          <span className="block font-semibold">{slot.area_name ?? "—"}</span>
+                          <span className="block text-[11px] text-ink-600">
+                            {slot.teacher_name ?? "—"}{slot.room ? ` · ${slot.room}` : ""}
+                            {slot.starts_at ? ` · ${slot.starts_at}${slot.ends_at ? `–${slot.ends_at}` : ""}` : ""}
+                          </span>
+                        </>
+                      )
                     ) : (
                       <span className="text-ink-300">—</span>
                     )}
