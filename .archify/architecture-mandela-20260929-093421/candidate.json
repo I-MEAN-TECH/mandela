@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Mandela — School Management Platform",
+    "subtitle": "One calm system for money, people, academics and operations · live runtime architecture",
+    "output": "mandela-architecture.html",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "legend": {
+      "entries": {
+        "external": { "label": "People & external services" },
+        "frontend": { "label": "Web app" },
+        "backend": { "label": "Services & workers" },
+        "database": { "label": "PostgreSQL" },
+        "cloud": { "label": "Integrations" },
+        "security": { "label": "Trust enforcement" }
+      }
+    },
+    "views": [
+      { "id": "daily", "label": "A parent pays (M-Pesa)", "focus": ["parent", "wa", "web", "api", "daraja", "school-db"], "note": "Daraja callback → pending payment → bursar confirms → same ledger everywhere." },
+      { "id": "morning", "label": "Morning roll-call", "focus": ["roles", "web", "api", "school-db"], "note": "Two taps per learner; LIVE polling keeps every dashboard current within 15s." },
+      { "id": "night", "label": "8 PM rollcall & messages", "focus": ["workers", "wa", "school-db"], "note": "Outbox drains to guardians on WhatsApp; retry state per message." },
+      { "id": "tenant", "label": "How a school is isolated", "focus": ["control", "school-db", "rls", "audit"], "note": "Subdomain → control registry → per-school DB, RLS on every table, every write audited." }
+    ]
+  },
+  "components": [
+    { "id": "roles", "type": "external", "label": "The whole school", "sublabel": "12 roles · one dashboard each", "tag": "3-tap law", "icon": "person", "pos": [40, 300], "size": [170, 76] },
+    { "id": "parent", "type": "external", "label": "Guardian (parent)", "sublabel": "phone · PWA", "icon": "person", "pos": [40, 560], "size": [170, 64] },
+    { "id": "wa", "type": "external", "label": "WhatsApp", "sublabel": "Meta Cloud API", "tag": "talk outbox", "icon": "messagebus", "pos": [40, 690], "size": [170, 64] },
+
+    { "id": "web", "type": "frontend", "label": "Web app", "sublabel": "Next.js 15 · RSC · :3000", "tag": "PWA + offline page", "icon": "frontend", "pos": [290, 400], "size": [185, 90] },
+    { "id": "api", "type": "backend", "label": "API", "sublabel": "NestJS · zod · :4000", "tag": "one rules place", "icon": "backend", "pos": [570, 400], "size": [185, 90] },
+
+    { "id": "workers", "type": "backend", "label": "Background workers", "sublabel": "rollup 60s · talk outbox", "tag": "LIVE dashboards", "icon": "clock", "pos": [450, 600], "size": [180, 64] },
+
+    { "id": "control", "type": "database", "label": "Control DB", "sublabel": "tenant registry", "icon": "database", "pos": [840, 180], "size": [180, 72] },
+    { "id": "school-db", "type": "database", "label": "School DB", "sublabel": "mandela_* · one per school", "tag": "52 migrations", "icon": "database", "pos": [840, 380], "size": [180, 90] },
+    { "id": "rls", "type": "security", "label": "Row-Level Security", "sublabel": "app.role / app.staff_id per session", "tag": "the security floor", "icon": "security", "pos": [840, 560], "size": [180, 72] },
+    { "id": "audit", "type": "database", "label": "Audit spine", "sublabel": "append-only · partitioned", "tag": "who did this?", "icon": "database", "pos": [840, 700], "size": [180, 72] },
+
+    { "id": "daraja", "type": "cloud", "label": "Daraja (M-Pesa)", "sublabel": "C2B callback + token", "icon": "briefcase", "pos": [1130, 700], "size": [185, 64] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Tenant isolation — one deployment, many schools", "wraps": ["control", "school-db", "rls", "audit"], "pad": 26 },
+    { "kind": "security-group", "label": "Trust boundary — nothing bypasses the API", "wraps": ["school-db", "rls"], "pad": 16 }
+  ],
+  "connections": [
+    { "id": "roles-to-web", "from": "roles", "to": "web", "label": "sign in · one dashboard each", "variant": "emphasis" },
+    { "id": "parent-to-web", "from": "parent", "to": "web", "label": "phone OTP", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+    { "id": "web-to-api", "from": "web", "to": "api", "label": "cookie session", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "web-live", "from": "api", "to": "web", "label": "LIVE poll 15s", "variant": "dashed", "fromSide": "bottom", "toSide": "bottom" },
+
+    { "id": "api-to-control", "from": "api", "to": "control", "label": "tenant resolve", "fromSide": "top", "toSide": "left" },
+    { "id": "provision", "from": "control", "to": "school-db", "label": "provisioner", "variant": "dashed" },
+    { "id": "api-to-db", "from": "api", "to": "school-db", "label": "RLS session", "variant": "emphasis", "fromSide": "right", "toSide": "left" },
+    { "id": "db-rls", "from": "rls", "to": "school-db", "label": "policies on every table", "variant": "security" },
+    { "id": "api-to-audit", "from": "api", "to": "audit", "label": "every write audited", "variant": "security", "fromSide": "bottom", "toSide": "left" },
+    { "id": "workers-db", "from": "workers", "to": "school-db", "label": "role_pulse", "variant": "dashed", "fromSide": "right", "toSide": "left" },
+
+    { "id": "workers-wa", "from": "workers", "to": "wa", "label": "WhatsApp send", "variant": "dashed", "fromSide": "left", "toSide": "right" },
+    { "id": "wa-parent", "from": "wa", "to": "parent", "label": "fee nudges · homework" },
+    { "id": "daraja-callback", "from": "daraja", "to": "api", "label": "C2B payment", "variant": "emphasis", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "How it serves a school", "items": [
+      "RSC dashboards stream real numbers on first paint — skeletons, never spinners",
+      "The 3-tap law: ≤5 nav targets per role; every tool within 3 taps",
+      "One question per screen — the dashboard answers it with live data first"
+    ] },
+    { "dot": "emerald", "title": "How it stays honest", "items": [
+      "One FIFO fee waterfall powers parent, bursar, print and PDF — one ledger, no arguments",
+      "Every write: zod validation → RLS session → audit row. Nothing bypasses the API",
+      "Print & PDF service renders A4 receipts, statements, report cards and the BOM pack from the same data",
+      "AI drafts only (anomaly flags, remarks) — humans approve; it never touches money"
+    ] },
+    { "dot": "rose", "title": "How it isolates & works offline", "items": [
+      "Subdomain → control DB → per-school database; RLS is the floor, the perm matrix only adds visibility",
+      "52 checksum-tracked migrations per school DB; rollup degrades to live query, never to an empty screen",
+      "Installable PWA, offline page, sync banner; outbox drains when connectivity returns"
+    ] }
+  ]
+}

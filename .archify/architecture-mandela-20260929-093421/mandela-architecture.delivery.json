@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "43793368-e69b-440c-978c-cd53d9629041",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\lewis\\Desktop\\mandela\\.archify\\architecture-mandela-20260929-093421\\candidate.json",
+  "output": "C:\\Users\\lewis\\Desktop\\mandela\\.archify\\architecture-mandela-20260929-093421\\mandela-architecture.html",
+  "specification": {
+    "sha256": "2cf000981b69b7c6a85eaeaead94cbc3e57f275824131f9e9fa4c8866aa4d458",
+    "bytes": 6882
+  },
+  "artifact": {
+    "sha256": "2afa0b0c2dd044c61feafe2be54b91b08b56f90315859b17c284622a48614359",
+    "bytes": 775418
+  }
+}
