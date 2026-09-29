@@ -93,7 +93,11 @@ export function HostelClient({
   return (
     <div className="grid gap-s4">
       <Card>
-        <CardHead title="Dorms" sub="Capacity vs allocated, live." />
+        <CardHead
+          title="Dorms"
+          sub="Capacity vs allocated, live."
+          action={<a href="/app/operations/archive" className="inline-flex h-8 items-center rounded-pill border border-border px-3.5 text-[12px] font-semibold text-text hover:bg-paper-100">🛏 Dorm asset register</a>}
+        />
         {dorms.length === 0 ? (
           <EmptyState title="No dorms yet" body="Add the first dorm to start allocating beds." />
         ) : (

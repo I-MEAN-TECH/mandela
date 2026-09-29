@@ -13,7 +13,7 @@ import {
   LayoutDashboard, Settings, Route, Check, Store, Sparkles,
   ReceiptText, CalendarClock, UserCog, Activity, UserRoundCheck,
   House, FileCheck2,
-  Hammer, BookMarked,
+  Hammer, BookMarked, Boxes,
 } from "lucide-react";
 
 /**
@@ -159,6 +159,7 @@ const NAV_CHILDREN_RAW: Record<string, Omit<NavChild, "icon">[]> = {
     { label: "Duty Rosters", href: "/app/operations/rosters" },
     { label: "Facilities & Repairs", href: "/app/operations/facilities" },
     { label: "Transport", href: "/app/operations/transport" },
+    { label: "Asset Archive", href: "/app/operations/archive" },
   ],
   Care: [
     { label: "Hostel & Mess", href: "/app/operations/hostel" },
@@ -223,6 +224,7 @@ export const CHILD_ICONS: Record<string, ReactNode> = {
   "Duty Rosters": <CalendarClock size={13} strokeWidth={2} aria-hidden />,
   "Facilities & Repairs": <Wrench size={13} strokeWidth={2} aria-hidden />,
   Transport: <Bus size={13} strokeWidth={2} aria-hidden />,
+  "Asset Archive": <Boxes size={13} strokeWidth={2} aria-hidden />,
   "Hostel & Mess": <BedDouble size={13} strokeWidth={2} aria-hidden />,
   "Infirmary & Security": <Stethoscope size={13} strokeWidth={2} aria-hidden />,
   "Conduct & Welfare": <HeartPulse size={13} strokeWidth={2} aria-hidden />,

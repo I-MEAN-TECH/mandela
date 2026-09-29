@@ -53,7 +53,12 @@ export function FacilitiesClient({ rows }: { rows: RepairRow[] }) {
         <CardHead
           title="Repair queue"
           sub="Anyone can report; leadership resolves. The verdict came from the rule, not a meeting."
-          action={<Button variant="primary" onClick={() => setOpen((v) => !v)}>{open ? "Close" : "+ Report damage"}</Button>}
+          action={
+            <span className="flex items-center gap-2">
+              <a href="/app/operations/archive" className="inline-flex h-9 items-center rounded-pill border border-border px-3.5 text-[12.5px] font-semibold text-text hover:bg-paper-100">🪑 Asset register</a>
+              <Button variant="primary" onClick={() => setOpen((v) => !v)}>{open ? "Close" : "+ Report damage"}</Button>
+            </span>
+          }
         />
         {open ? (
           <div className="flex max-w-xl flex-col gap-s3 p-s5">

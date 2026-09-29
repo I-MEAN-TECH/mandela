@@ -457,8 +457,9 @@ export function DormParentToday({ p }: { p: DormParentPulseData }) {
             ))}
           </ul>
         )}
-        <div className="mt-s3 border-t border-border pt-s3">
+        <div className="mt-s3 flex flex-wrap gap-s4 border-t border-border pt-s3">
           <Link href="/app/operations/hostel" className="text-[12.5px] font-semibold underline underline-offset-4">Take rollcall</Link>
+          <Link href="/app/operations/archive" className="text-[12.5px] font-semibold underline underline-offset-4">🛏 Dorm asset register</Link>
         </div>
       </Card>
 
@@ -544,8 +545,9 @@ export function JanitorToday({ p }: { p: JanitorPulseData }) {
             ))}
           </ul>
         )}
-        <div className="mt-s3 border-t border-border pt-s3">
+        <div className="mt-s3 flex flex-wrap gap-s4 border-t border-border pt-s3">
           <Link href="/app/operations/facilities" className="text-[12.5px] font-semibold underline underline-offset-4">Report a repair</Link>
+          <Link href="/app/operations/archive" className="text-[12.5px] font-semibold underline underline-offset-4">🪑 Furniture & equipment register</Link>
         </div>
       </Card>
 
@@ -597,8 +599,9 @@ export function LibrarianToday({ p }: { p: LibrarianPulseData }) {
             ))}
           </ul>
         )}
-        <div className="mt-s3 border-t border-border pt-s3">
+        <div className="mt-s3 flex flex-wrap gap-s4 border-t border-border pt-s3">
           <Link href="/app/operations/library" className="text-[12.5px] font-semibold underline underline-offset-4">Issue / Return</Link>
+          <Link href="/app/operations/archive" className="text-[12.5px] font-semibold underline underline-offset-4">📦 Book archive — record new books</Link>
         </div>
       </Card>
 
