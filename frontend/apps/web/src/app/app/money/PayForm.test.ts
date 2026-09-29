@@ -1,4 +1,4 @@
-import { paymentLearnerChoices } from "./PayForm";
+import { paymentLearnerChoices, paymentLearnerWorkspaceHref } from "./PayForm";
 
 const learners = [
   { id: "1", name: "Amina Otieno", class: "Grade 7 Blue", admission_no: "ADM-001" },
@@ -17,8 +17,8 @@ function assert(condition: boolean, message: string) {
   }
 }
 
-const initial = paymentLearnerChoices(learners, "", "", false);
+const initial = paymentLearnerChoices(learners, "", "");
 assert(initial.length === 5, "initial payment choices show only five learners");
-assert(paymentLearnerChoices(learners, "", "Grade 7 Green", false)[0]?.name === "Brian Kamau", "class filter narrows choices");
-assert(paymentLearnerChoices(learners, "cynthia", "", false)[0]?.name === "Cynthia Njeri", "search finds learner by name");
-assert(paymentLearnerChoices(learners, "", "", true).length === 6, "view all exposes filtered remainder");
+assert(paymentLearnerChoices(learners, "", "Grade 7 Green")[0]?.name === "Brian Kamau", "class filter narrows choices");
+assert(paymentLearnerChoices(learners, "cynthia", "")[0]?.name === "Cynthia Njeri", "search finds learner by name");
+assert(paymentLearnerWorkspaceHref() === "/app/people/learners", "view all opens the dedicated learner workspace");

@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import Link from "next/link";
 
 import { useState, useTransition } from "react";
 import { Button, Wizard } from "@mandela/ui";
@@ -13,15 +14,17 @@ export function paymentLearnerChoices<T extends { name: string; class: string | 
   learners: readonly T[],
   query: string,
   classFilter: string,
-  showAll: boolean,
 ): T[] {
   const needle = query.trim().toLowerCase();
   const filtered = learners.filter((learner) =>
     (!classFilter || learner.class === classFilter) &&
     (!needle || `${learner.name} ${learner.admission_no}`.toLowerCase().includes(needle)),
   );
-  return showAll ? filtered : filtered.slice(0, INITIAL_LEARNER_LIMIT);
+  return filtered.slice(0, INITIAL_LEARNER_LIMIT);
 }
+
+/** The full roster owns high-volume learner management; the cashier stays compact. */
+export function paymentLearnerWorkspaceHref() { return "/app/people/learners"; }
 
 /**
  * PayForm — docs/SIMPLICITY.md made real: a 3-step wizard with a
@@ -52,7 +55,6 @@ export function PayForm({
   const [learnerId, setLearnerId] = useState(learners[0]?.id ?? "");
   const [learnerQuery, setLearnerQuery] = useState("");
   const [classFilter, setClassFilter] = useState("");
-  const [showAllLearners, setShowAllLearners] = useState(false);
   const [amount, setAmount] = useState("");
   const [pending, start] = useTransition();
   const [resetKey, setResetKey] = useState(0);
@@ -66,8 +68,11 @@ export function PayForm({
 
   const learner = learners.find((l) => l.id === learnerId);
   const classNames = [...new Set(learners.map((l) => l.class).filter((value): value is string => Boolean(value)))].sort();
-  const learnerChoices = paymentLearnerChoices(learners, learnerQuery, classFilter, showAllLearners);
-  const filteredLearnerCount = paymentLearnerChoices(learners, learnerQuery, classFilter, true).length;
+  const learnerChoices = paymentLearnerChoices(learners, learnerQuery, classFilter);
+  const filteredLearnerCount = learners.filter((candidate) =>
+    (!classFilter || candidate.class === classFilter) &&
+    (!learnerQuery.trim() || `${candidate.name} ${candidate.admission_no}`.toLowerCase().includes(learnerQuery.trim().toLowerCase())),
+  ).length;
   const amountNum = Number((amount || "").replace(/,/g, ""));
   const amountValid = Number.isFinite(amountNum) && amountNum > 0 && amountNum <= 10_000_000;
   const sh = (c: number) => `Ksh ${c.toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
@@ -86,7 +91,7 @@ export function PayForm({
                   Search learner
                   <input
                     value={learnerQuery}
-                    onChange={(event) => { setLearnerQuery(event.target.value); setShowAllLearners(false); }}
+                    onChange={(event) => setLearnerQuery(event.target.value)}
                     type="search"
                     placeholder="Name or admission number"
                     className="h-10 rounded-sm border border-border bg-surface px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -96,7 +101,7 @@ export function PayForm({
                   Class
                   <select
                     value={classFilter}
-                    onChange={(event) => { setClassFilter(event.target.value); setShowAllLearners(false); }}
+                    onChange={(event) => setClassFilter(event.target.value)}
                     className="h-10 rounded-sm border border-border bg-surface px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <option value="">All classes</option>
@@ -122,13 +127,12 @@ export function PayForm({
               ))}
               {filteredLearnerCount === 0 ? <p className="py-2 text-sm text-muted">No learners match these filters.</p> : null}
               {filteredLearnerCount > INITIAL_LEARNER_LIMIT ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAllLearners((value) => !value)}
-                  className="h-10 rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-primary hover:bg-paper-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                <Link
+                  href={paymentLearnerWorkspaceHref()}
+                  className="inline-flex h-10 items-center rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-primary hover:bg-paper-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
-                  {showAllLearners ? "Show less" : `View all ${filteredLearnerCount} learners`}
-                </button>
+                  {`View all ${filteredLearnerCount} learners`}
+                </Link>
               ) : null}
             </div>
           ),

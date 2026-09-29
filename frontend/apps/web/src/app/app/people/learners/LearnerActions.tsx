@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button, Card, CardHead, StatusPill } from "@mandela/ui";
 import { upsertLearnerAction, type LearnerRow, type ClassRow } from "@/lib/api";
 
@@ -119,7 +120,7 @@ export function LearnerRoster({ rows, classes, canEdit }: {
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-border">
-                {["Adm no", "Name", "Class", "Gender", "Status", ""].map((h) => (
+                {["Adm no", "Name", "Class", "Gender", "Status", "Actions"].map((h) => (
                   <th key={h} className="microlabel px-s3 pb-s2 pt-s1 text-left">{h}</th>
                 ))}
               </tr>
@@ -136,10 +137,12 @@ export function LearnerRoster({ rows, classes, canEdit }: {
                   <td className="px-s3 py-s3 text-ink-700">{l.class ?? "—"}</td>
                   <td className="px-s3 py-s3 text-ink-700">{l.gender ?? "—"}</td>
                   <td className="px-s3 py-s3"><StatusPill tone={l.status === "active" ? "ok" : "neutral"}>{l.status}</StatusPill></td>
-                  <td className="px-s3 py-s3 text-right">
-                    {canEdit ? (
-                      <Button size="sm2" variant="ghost" onClick={() => setEditing(l)}>Edit</Button>
-                    ) : null}
+                  <td className="px-s3 py-s3">
+                    <div className="flex justify-end gap-1.5 whitespace-nowrap">
+                      <Link href={`/app/people/learners/${l.id}`} className="inline-flex h-8 items-center rounded-pill px-2.5 text-[12px] font-semibold text-pine-700 hover:bg-paper-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">View</Link>
+                      {canEdit ? <Button size="sm2" variant="ghost" onClick={() => setEditing(l)}>Edit</Button> : null}
+                      {canEdit ? <LearnerStatusToggle learnerId={l.id} name={l.name} status={l.status} compact /> : null}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -393,14 +396,14 @@ function EditLearnerDialog({ learner, classes, onClose, onSaved }: {
  * Status toggle on the 360 page — active ↔ transferred. The upsert keeps
  * unmentioned fields (COALESCE on the server), so names ride along untouched.
  */
-export function LearnerStatusToggle({ learnerId, name, status }: { learnerId: string; name: string; status: string }) {
+export function LearnerStatusToggle({ learnerId, name, status, compact = false }: { learnerId: string; name: string; status: string; compact?: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const next = status === "active" ? "transferred" : "active";
   const [first = "", ...rest] = name.split(" ");
   return (
-    <div className="flex flex-col gap-1">
+    <div className={compact ? "contents" : "flex flex-col gap-1"}>
       <Button
         size="sm"
         variant={status === "active" ? "ghost" : "secondary"}
@@ -418,9 +421,9 @@ export function LearnerStatusToggle({ learnerId, name, status }: { learnerId: st
           })
         }
       >
-        {status === "active" ? "Mark transferred" : "Reactivate"}
+        {status === "active" ? (compact ? "Archive" : "Mark transferred") : "Restore"}
       </Button>
-      {msg ? <p role="status" className="text-[11.5px] font-semibold text-ink-600">{msg}</p> : null}
+      {msg && !compact ? <p role="status" className="text-[11.5px] font-semibold text-ink-600">{msg}</p> : null}
     </div>
   );
 }

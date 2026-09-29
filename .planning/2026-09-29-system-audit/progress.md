@@ -46,6 +46,8 @@
 - 2026-09-29: Started Phase 8 list-first data management after approved design/spec/plan. Test-first implementation makes non-dashboard sections default to List while preserving dashboard Cards; learner and payment ledgers now have scoped native filters, result counts, and 25-row pagination. Focused list/filter tests and web typecheck pass. Boarding filter deferred honestly because the list API omits boarding state.
 - 2026-09-29: Production browser smoke completed for Money and Learners. Both operational routes are list-first and expose their approved filters; Money's payment picker remains capped at five until expanded.
 - 2026-09-29: Phase 8 complete. Fresh focused contracts, navigation/payment/role regressions, TypeScript, bundle budget, theme policy, whitespace, production build, and production-browser smoke passed before release preparation.
+- 2026-09-29: Started Phase 9. The payment picker no longer expands inline: View all opens the complete People/Learners workspace. Its rows now make View, Edit, and safe archive/restore explicit; irreversible learner deletion remains intentionally unavailable.
+- 2026-09-29: Phase 9 complete. Payment and learner contracts, web typecheck, bundle budget, theme policy, whitespace, production build, and live localhost login response verified. Local production web server restarted on port 3000.
 
 ## Errors Encountered
 

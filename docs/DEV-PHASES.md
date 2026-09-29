@@ -261,3 +261,8 @@ Post-fix numbers above; regression gates all re-green after the fix.
 - [x] Add accessible search, field filters, result counts, and pagination to
   learner and payment ledgers; retain specialized filters already present in
   reports, exams, and audit history.
+
+### Payment learner workspace handoff (2026-09-29) — complete
+
+- [x] Open the full People/Learners workspace from the compact payment picker;
+  retain clear per-row View, Edit, and archive/restore actions.

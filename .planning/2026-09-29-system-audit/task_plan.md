@@ -45,7 +45,14 @@ Fail closed in production, harden edge/runtime settings, upgrade dependencies, a
 
 ## Next Step
 
-Continue the separately scoped public website and product-handoff phase.
+Replace payment-picker expansion with a dedicated learner-workspace handoff and
+make row-level learner actions explicit.
+
+### Phase 9: Payment learner workspace handoff
+**Status:** complete
+
+Keep the payment picker compact. Send View all to People/Learners, where every
+authorized learner has direct View, Edit, and safe archive/restore controls.
 
 ### Phase 8: List-first data management
 **Status:** complete
