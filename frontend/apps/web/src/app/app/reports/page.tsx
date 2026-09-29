@@ -3,6 +3,7 @@ import { Card, CardHead, DataTable, EmptyState, KpiCard, Money, SerifHeader } fr
 import { redirect } from "next/navigation";
 import { noun } from "@/lib/plural";
 import { AppLiveBar } from "../LiveBar";
+import { FeeReportPdfButton } from "./FeeReportPdfButton";
 
 /** Reports — the bursar's term report: billed vs collected, print-ready. */
 export default async function ReportsPage() {
@@ -32,7 +33,11 @@ export default async function ReportsPage() {
         </div>
 
         <Card>
-          <CardHead title="Collections by class" sub="Full term, all classes" />
+          <CardHead
+            title="Collections by class"
+            sub="Full term, all classes — download it as a PDF for the board or the file."
+            action={<FeeReportPdfButton />}
+          />
           {collections.collections.length === 0 ? (
             <EmptyState title="No fee items yet" body="Reports fill in once fee items are billed." />
           ) : (

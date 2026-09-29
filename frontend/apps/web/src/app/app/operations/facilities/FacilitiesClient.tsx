@@ -110,10 +110,10 @@ export function FacilitiesClient({ rows }: { rows: RepairRow[] }) {
                 {Number(r.est_cost_cents) > 0 ? <Money cents={r.est_cost_cents} className="text-[12.5px]" /> : null}
                 {r.note ? <span className="text-muted">· {r.note}</span> : null}
                 {r.state === "open" ? (
-                  <span className="ml-auto flex gap-s2">
-                    <button type="button" className="text-xs text-muted hover:text-text" onClick={() => setState(r.id, "in-repair")}>in repair</button>
-                    <button type="button" className="text-xs text-muted hover:text-ok" onClick={() => setState(r.id, "done")}>done</button>
-                    <button type="button" className="text-xs text-muted hover:text-danger" onClick={() => setState(r.id, "out-of-service")}>out of service</button>
+                  <span className="ml-auto flex flex-wrap items-center gap-s2" role="group" aria-label="Set repair state">
+                    <Button size="sm2" disabled={pending} onClick={() => setState(r.id, "in-repair")}>In repair</Button>
+                    <Button size="sm2" variant="primary" disabled={pending} onClick={() => setState(r.id, "done")}>Done</Button>
+                    <Button size="sm2" variant="danger" disabled={pending} onClick={() => setState(r.id, "out-of-service")}>Out of service</Button>
                   </span>
                 ) : null}
               </div>

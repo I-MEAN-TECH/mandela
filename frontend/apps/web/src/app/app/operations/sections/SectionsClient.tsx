@@ -147,28 +147,14 @@ export function SectionsClient({ rows, staff, canManage = true }: { rows: Sectio
                   </div>
                 </button>
                 {canManage ? (
-                  <div className="flex items-center gap-s3 pt-s1">
-                    <button
-                      type="button"
-                      className="text-xs text-muted underline-offset-2 hover:text-text hover:underline"
-                      onClick={() => openEdit(s)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="text-xs text-muted underline-offset-2 hover:text-text hover:underline"
-                      onClick={() => toggle(s.id, !s.enabled)}
-                    >
+                  <div className="flex flex-wrap items-center gap-s2 pt-s1" role="group" aria-label={`Manage ${s.name}`}>
+                    <Button size="sm" disabled={pending} onClick={() => openEdit(s)}>Edit</Button>
+                    <Button size="sm" disabled={pending} onClick={() => toggle(s.id, !s.enabled)}>
                       {s.enabled ? "Disable" : "Enable"}
-                    </button>
-                    <button
-                      type="button"
-                      className="text-xs text-muted underline-offset-2 hover:text-danger hover:underline"
-                      onClick={() => remove(s)}
-                    >
+                    </Button>
+                    <Button size="sm" variant="danger" disabled={pending} onClick={() => remove(s)}>
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 ) : null}
               </div>

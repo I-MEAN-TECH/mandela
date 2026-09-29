@@ -1492,6 +1492,20 @@ export class WebController {
     return web.approveReportCard(tenant.dbName, principal, input.cardId);
   }
 
+  /** Cancel a DRAFT card — the reason is mandatory and lands on the audit trail. */
+  @Post("admin/report-cards/cancel")
+  @HttpCode(200)
+  async reportCardCancel(@Req() req: Request, @Body() body: unknown) {
+    const input = z.object({ cardId: z.string().uuid(), reason: z.string().min(4).max(500) }).parse(body);
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { error: "staff session required" };
+    if (!["admin", "principal", "teacher"].includes(principal.role ?? "")) {
+      return { ok: false, error: "Only the card's owner or leadership can cancel it" };
+    }
+    return web.cancelDraftReportCard(tenant.dbName, principal, input);
+  }
+
   // -- Governance cluster (33/34/35/36) ---------------------------------------
   @Get("admin/users-roles")
   async usersRoles(@Req() req: Request) {
@@ -3703,6 +3717,22 @@ export class WebController {
   // ===========================================================================
   // Final mile (2026-09-27) — board pack PDF + one-click full data export.
   // ===========================================================================
+
+  /** Fee report — the Reports screen's collections table as A4 PDF. Leaders. */
+  @Get("print/pdf/fee-report")
+  async feeReportPdf(@Req() req: Request, @Res() res: Response) {
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") {
+      res.status(401).json({ error: "staff session required" });
+      return;
+    }
+    if (principal.role !== "admin" && principal.role !== "principal" && principal.role !== "bursar") {
+      res.status(403).json({ error: "money roles only" });
+      return;
+    }
+    await pdf.feeReportPdf(tenant.dbName, res);
+  }
 
   /** Board pack — one A4 term position for the governors. Leaders only. */
   @Get("print/pdf/board-pack")

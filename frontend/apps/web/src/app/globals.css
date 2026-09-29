@@ -235,6 +235,14 @@ body {
     margin: 12mm;
   }
 
+  /* Timetable print — the office chooses the orientation when opening the
+     print view (schools pin A4 copies in classrooms; portrait fits the
+     classic tall grid, landscape gives each day a wide column). */
+  body:has([data-doc].print-orientation-landscape) { page: landscape-tt; }
+  body:has([data-doc].print-orientation-portrait) { page: portrait-tt; }
+  @page portrait-tt { size: A4 portrait; margin: 10mm; }
+  @page landscape-tt { size: A4 landscape; margin: 10mm; }
+
   body:has([data-doc]) > *:not(:has([data-doc])):not(script),
   body:has([data-statement]) > *:not(:has([data-statement])):not(script) {
     display: none !important;

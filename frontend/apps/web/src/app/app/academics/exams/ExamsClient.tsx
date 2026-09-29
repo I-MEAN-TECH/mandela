@@ -5,9 +5,81 @@ import { useRouter } from "next/navigation";
 import { Button, Card, CardHead, StatusPill } from "@mandela/ui";
 import {
   approveReportCardAction,
+  cancelDraftReportCardAction,
   generateReportCardAction,
   type ExamCoverageData,
 } from "@/lib/api";
+
+/**
+ * CancelDraftButton — cancelling a draft card demands a typed reason. The
+ * reason lands on the audit trail; the draft row itself is removed (approved
+ * and issued cards are never cancellable here). The button only appears on
+ * draft rows.
+ */
+export function CancelDraftButton({ cardId, learner, onDone }: {
+  cardId: string;
+  learner: string;
+  onDone?: (text: string, ok: boolean) => void;
+}) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+
+  const submit = () => {
+    setErr(null);
+    if (reason.trim().length < 4) {
+      setErr("A reason is mandatory — type why the draft is being cancelled.");
+      return;
+    }
+    start(async () => {
+      const r = await cancelDraftReportCardAction({ cardId, reason: reason.trim() });
+      if (!r.ok) { setErr(r.error ?? "Failed"); return; }
+      setOpen(false);
+      setReason("");
+      onDone?.(`Draft cancelled — ${learner}`, true);
+      router.refresh();
+    });
+  };
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className="text-[12px] font-semibold text-danger underline decoration-transparent underline-offset-2 hover:decoration-danger"
+        onClick={() => setOpen(true)}
+      >
+        Cancel draft
+      </button>
+    );
+  }
+
+  return (
+    <div className="w-full min-w-[240px] max-w-sm rounded-sm border border-danger/40 bg-danger/5 p-3" role="group" aria-label={`Cancel draft for ${learner}`}>
+      <p className="text-[12px] font-semibold text-ink-950">
+        Why is “{learner}”&apos;s draft being cancelled?
+      </p>
+      <textarea
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        rows={2}
+        autoFocus
+        placeholder="e.g. wrong class — scores were captured against the duplicate learner"
+        className="mt-2 w-full rounded-sm border border-paper-300 bg-surface px-2.5 py-2 text-[12.5px] text-ink-950 outline-none focus:border-danger"
+      />
+      {err ? <p className="mt-1 text-[11.5px] font-semibold text-danger">{err}</p> : null}
+      <div className="mt-2 flex items-center gap-2">
+        <Button size="sm2" variant="danger" disabled={pending} onClick={submit}>
+          {pending ? "Cancelling…" : "Cancel draft"}
+        </Button>
+        <Button size="sm2" variant="ghost" disabled={pending} onClick={() => { setOpen(false); setErr(null); setReason(""); }}>
+          Keep draft
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Exams & Report Cards 18 — admin's screen is coverage + approval + output.
@@ -107,6 +179,13 @@ export function ApprovalQueue({ pending, canApprove }: {
                   Approve
                 </Button>
               ) : null}
+              {canApprove ? (
+                <CancelDraftButton
+                  cardId={p.card_id}
+                  learner={p.learner}
+                  onDone={(text, ok) => setMsg({ ok, text })}
+                />
+              ) : null}
             </div>
           ))}
         </div>
@@ -174,6 +253,7 @@ export function CardDesk({ cards }: { cards: ExamCoverageData["recentCards"] }) 
   const [cls, setCls] = useState("");
   const [state, setState] = useState("");
   const [q, setQ] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Same guard as the approval queue: a card without a real id is unprintable
   // noise — drop it instead of rendering a dead link.
@@ -245,12 +325,18 @@ export function CardDesk({ cards }: { cards: ExamCoverageData["recentCards"] }) 
                 >
                   Print preview
                 </a>
+                {c.state === "draft" ? (
+                  <CancelDraftButton cardId={c.card_id} learner={c.learner} onDone={(text, ok) => setMsg({ ok, text })} />
+                ) : null}
               </div>
             ))}
             {filtered.length === 0 ? (
               <p className="py-4 text-[13px] text-ink-500">No cards match those filters.</p>
             ) : null}
           </div>
+          {msg ? (
+            <p className={msg.ok ? "mt-3 text-[12.5px] text-pine-700" : "mt-3 text-[12.5px] text-danger"} role="status">{msg.text}</p>
+          ) : null}
         </>
       )}
     </Card>

@@ -74,6 +74,7 @@ export const SCHOOL_MIGRATIONS: MigrationFile[] = [
   { name: "051_pulse_cross_role_reads.sql", fullPath: SQL_PATHS.schoolPulseCrossRoleReads },
   { name: "052_perm_matrix_grants.sql", fullPath: SQL_PATHS.schoolPermMatrixGrants },
   { name: "053_leader_delete_policies.sql", fullPath: SQL_PATHS.schoolLeaderDeletePolicies },
+  { name: "054_report_card_delete.sql", fullPath: SQL_PATHS.schoolReportCardDelete },
 ].map(load);
 
 export const CONTROL_MIGRATIONS: MigrationFile[] = [

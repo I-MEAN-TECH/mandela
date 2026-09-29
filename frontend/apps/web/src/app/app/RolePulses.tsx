@@ -247,7 +247,7 @@ export function PrincipalToday({ p }: { p: PrincipalPulseData }) {
         <SparklineStrip points={p.attendance_trend.map((t) => ({ label: t.day.slice(8), value: t.pct, of: t.pct / 100 }))} />
       </Card>
 
-      <div className="grid gap-s3h lg:grid-cols-2">
+      <div className="grid gap-s3h">
         <Card>
           <CardHead title="Today's absences by class" />
           {p.absences_by_class.length === 0 ? (

@@ -201,6 +201,90 @@ function kv(doc: PDFKit.PDFDocument, label: string, value: string): void {
 }
 
 /**
+ * Fee report — the term collections table (Reports screen) as one A4 the
+ * office can hand to the board or file. Same ink discipline as the board
+ * pack: class rows, billed/paid/gap/rate columns, term totals footer.
+ */
+export async function feeReportPdf(
+  dbName: string,
+  res: Response,
+): Promise<void> {
+  const db = getSchoolPool(dbName);
+  const schoolRow = await db.query<{ name: string }>(`SELECT name FROM school_settings WHERE id = 'default'`);
+  const term = await db.query<{ label: string }>(
+    `SELECT label FROM term WHERE CURRENT_DATE BETWEEN starts_on AND ends_on LIMIT 1`,
+  );
+  const rows = await db.query<{ class: string; billed: string; paid: string }>(
+    `WITH cur AS (SELECT id, starts_on, ends_on FROM term WHERE CURRENT_DATE BETWEEN starts_on AND ends_on LIMIT 1)
+     SELECT COALESCE(cl.name, 'Unassigned') AS class,
+            COALESCE(SUM(fi.amount) FILTER (WHERE fi.is_optional = false
+               OR EXISTS (SELECT 1 FROM consent cc WHERE cc.id = fi.consent_id AND cc.choice = 'granted')), 0)::text AS billed,
+            COALESCE((SELECT SUM(p.amount) FROM payments p
+                      JOIN learner pl ON pl.id = p.learner_id
+                      WHERE p.state = 'confirmed' AND pl.class_id = cl.id
+                        AND p.paid_at >= (SELECT starts_on FROM cur)
+                        AND p.paid_at <= (SELECT ends_on FROM cur)), 0)::text AS paid
+     FROM fee_item fi
+     JOIN learner l ON l.id = fi.learner_id
+     LEFT JOIN class cl ON cl.id = l.class_id
+     GROUP BY cl.id, cl.name
+     ORDER BY 2 DESC`,
+  );
+
+  const doc = new PDFDocument({ size: "A4", margin: 32, info: { Title: "Fee report" } });
+  streamPdf(res, doc, "fee-report.pdf");
+  header(
+    doc,
+    schoolRow.rows[0]?.name ?? "School",
+    "Fee report — billed vs collected",
+    term.rows[0]?.label ? `Term: ${term.rows[0]!.label}` : "Term: (none open)",
+  );
+
+  const kes = (cents: number) => `Ksh ${Math.round(cents / 100).toLocaleString("en-KE")}`;
+  let y = doc.y + 4;
+  const cols = [32, 232, 332, 432, 512];
+  doc.font("Helvetica").fontSize(9.5).fillColor(MUTED)
+    .text("Class", cols[0]!, y).text("Billed", cols[1]!, y)
+    .text("Collected", cols[2]!, y).text("Gap", cols[3]!, y).text("Rate", cols[4]!, y);
+  y += 14;
+  doc.moveTo(32, y).lineTo(563, y).lineWidth(0.5).strokeColor(LINE).stroke();
+  y += 6;
+  doc.font("Helvetica").fontSize(10).fillColor(INK);
+  let totBilled = 0;
+  let totPaid = 0;
+  for (const r of rows.rows) {
+    if (y > doc.page.height - 90) { doc.addPage(); y = 48; }
+    const b = Number(r.billed);
+    const p = Number(r.paid);
+    totBilled += b;
+    totPaid += p;
+    const rate = b > 0 ? Math.round((p / b) * 100) : 0;
+    doc.text(r.class, cols[0]!, y)
+      .text(kes(b), cols[1]!, y)
+      .text(kes(p), cols[2]!, y)
+      .text(kes(Math.max(b - p, 0)), cols[3]!, y)
+      .text(`${rate}%`, cols[4]!, y);
+    y += 15;
+  }
+  if (rows.rows.length === 0) {
+    doc.fontSize(10).fillColor(MUTED).text("No fee items billed yet.", cols[0]!, y);
+    y += 20;
+  }
+  y += 6;
+  doc.moveTo(32, y).lineTo(563, y).lineWidth(1).strokeColor(LINE).stroke();
+  y += 8;
+  doc.font("Helvetica-Bold").fontSize(11).fillColor(INK)
+    .text("TOTAL", cols[0]!, y)
+    .text(kes(totBilled), cols[1]!, y)
+    .text(kes(totPaid), cols[2]!, y)
+    .text(kes(Math.max(totBilled - totPaid, 0)), cols[3]!, y)
+    .text(`${totBilled > 0 ? Math.round((totPaid / totBilled) * 100) : 0}%`, cols[4]!, y);
+  doc.moveDown(1.5);
+  doc.font("Helvetica").fontSize(8.5).fillColor(MUTED)
+    .text(`Prepared ${new Date().toISOString().slice(0, 10)} from the live record.`, 32, doc.y);
+}
+
+/**
  * Board pack — one A4 the governors actually read: term identity, the money
  * position, attendance, staff activation, governance load (approvals/tasks),
  * discipline tone, and proof the record is alive. Leaders-only (admin /

@@ -1248,6 +1248,9 @@ export async function generateReportCardAction(input: { learnerId: string }) {
 export async function approveReportCardAction(input: { cardId: string }) {
   return mutate("/web/admin/report-cards/approve", input);
 }
+export async function cancelDraftReportCardAction(input: { cardId: string; reason: string }) {
+  return mutate("/web/admin/report-cards/cancel", input);
+}
 
 // ---- Governance cluster (33/34/35/36) ---------------------------------------
 export interface UsersRolesData {
@@ -1566,6 +1569,7 @@ export interface LibraryData {
   titles: number; copies: number; on_shelf: number;
   overdue: { copy_barcode: string; title: string; learner: string; due_on: string }[];
   most_borrowed: { title: string; loans: number }[];
+  loans: { copy_barcode: string; title: string; learner: string; learner_id: string; admission_no: string | null; class_name: string | null; due_on: string; overdue: boolean }[];
 }
 export async function getLibrary() {
   return read<LibraryData | { error: string }>("/web/admin/library", { error: "unavailable" });

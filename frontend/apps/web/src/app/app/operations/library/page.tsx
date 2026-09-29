@@ -35,6 +35,7 @@ export default async function LibraryPage() {
       <LibraryClient
         overdue={"overdue" in data ? data.overdue : []}
         most={"most_borrowed" in data ? data.most_borrowed : []}
+        loans={"loans" in data ? data.loans : []}
         learners={roster}
       />
     </div>

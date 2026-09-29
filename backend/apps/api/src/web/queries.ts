@@ -4552,6 +4552,46 @@ export async function approveReportCard(
   });
 }
 
+/**
+ * Cancel a DRAFT report card. A draft carries no official weight, so the
+ * honest exit is deletion — the reason is mandatory and lives on the audit
+ * trail forever, while the card row is removed. The state guard keeps
+ * approved and issued cards untouched: those can never be cancelled here.
+ */
+export async function cancelDraftReportCard(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+  input: { cardId: string; reason: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (principal.role !== "admin" && principal.role !== "principal" && principal.role !== "teacher") {
+    return { ok: false, error: "Only the card's owner or leadership can cancel it" };
+  }
+  const reason = input.reason.trim();
+  if (reason.length < 4) return { ok: false, error: "A reason is mandatory — type why the draft is being cancelled" };
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    const cur = await c.query<{ state: string; generated_by: string | null }>(
+      `SELECT state::text AS state, generated_by::text AS generated_by FROM report_card WHERE id = $1`,
+      [input.cardId],
+    );
+    if (!cur.rowCount) return { ok: false, error: "Card not found" };
+    if (cur.rows[0]!.state !== "draft") {
+      return { ok: false, error: "Only draft cards can be cancelled — approved or issued cards stand" };
+    }
+    // Teachers may only cancel their own drafts; leadership cancels any.
+    if (principal.role === "teacher" && cur.rows[0]!.generated_by !== principal.userId) {
+      return { ok: false, error: "Teachers cancel only the cards they generated" };
+    }
+    const del = await c.query(`DELETE FROM report_card WHERE id = $1 AND state = 'draft'`, [input.cardId]);
+    if (!del.rowCount) return { ok: false, error: "Card not found or already approved" };
+    await c.query(
+      `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, after)
+       VALUES ($1, 'staff', 'reportcard.cancel_draft', 'report_card', $2, $3)`,
+      [principal.userId, input.cardId, JSON.stringify({ reason })],
+    );
+    return { ok: true as const };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Governance cluster: Users & Roles (33), Permissions Matrix (34),
 // Duties & Appointments (35), Integrations (36). The matrix shapes nav and
@@ -6071,6 +6111,8 @@ export interface LibraryData {
   on_shelf: number;
   overdue: { copy_barcode: string; title: string; learner: string; due_on: string }[];
   most_borrowed: { title: string; loans: number }[];
+  /** Active loans — the counter's filterable list (class / reg no / name). */
+  loans: { copy_barcode: string; title: string; learner: string; learner_id: string; admission_no: string | null; class_name: string | null; due_on: string; overdue: boolean }[];
 }
 
 export async function libraryOverview(
@@ -6096,12 +6138,24 @@ export async function libraryOverview(
        JOIN library_copy lc ON lc.id = ll.copy_id
        JOIN library_item li ON li.id = lc.item_id
        GROUP BY li.title ORDER BY loans DESC LIMIT 5`);
+    const loans = await c.query<LibraryData["loans"][number]>(
+      `SELECT lc.barcode AS copy_barcode, li.title,
+              l.first_name || ' ' || l.last_name AS learner,
+              l.id::text AS learner_id, l.admission_no, cl.name AS class_name,
+              lc.due_on::text AS due_on,
+              (lc.due_on < CURRENT_DATE) AS overdue
+       FROM library_copy lc
+       JOIN learner l ON l.id = lc.with_learner
+       JOIN library_item li ON li.id = lc.item_id
+       LEFT JOIN class cl ON cl.id = l.class_id
+       ORDER BY lc.due_on, l.first_name LIMIT 300`);
     return {
       titles: Number(counts.rows[0]!.titles),
       copies: Number(counts.rows[0]!.copies),
       on_shelf: Number(counts.rows[0]!.shelf),
       overdue: overdue.rows,
       most_borrowed: mb.rows,
+      loans: loans.rows.map((r) => ({ ...r, overdue: Boolean(r.overdue) })),
     };
   });
 }

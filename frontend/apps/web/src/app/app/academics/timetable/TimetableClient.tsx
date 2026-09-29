@@ -86,6 +86,26 @@ export function TimetableClient({ data, canEdit }: { data: TimetableData; canEdi
             <span className="text-[12px] text-muted">Fills empty periods with each class's areas — never moves a placed slot.</span>
           </div>
         ) : null}
+        <div className="flex flex-wrap items-center gap-s2 border-b border-paper-200 px-s5 py-s3">
+          <span className="microlabel !mb-0">Download for the classroom</span>
+          <a
+            href={`/print/timetable?classId=${classId}&orientation=portrait`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-8 items-center rounded-pill border border-paper-300 px-3.5 text-[12px] font-semibold text-ink-950 hover:border-pine-400 hover:bg-paper-50"
+          >
+            Portrait A4
+          </a>
+          <a
+            href={`/print/timetable?classId=${classId}&orientation=landscape`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-8 items-center rounded-pill border border-paper-300 px-3.5 text-[12px] font-semibold text-ink-950 hover:border-pine-400 hover:bg-paper-50"
+          >
+            Landscape A4
+          </a>
+          <span className="text-[12px] text-muted">Opens the print view — Print or Save as PDF for the wall copy.</span>
+        </div>
         <div className="overflow-x-auto px-s5 pb-s5">
           <table className="w-full min-w-[680px] border-collapse">
             <thead>

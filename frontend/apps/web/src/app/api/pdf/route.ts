@@ -36,6 +36,25 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "board pack unavailable" }, { status: 502 });
     }
   }
+  // Fee report — the Reports screen's whole collections table as one PDF.
+  if (kindRaw === "fee-report") {
+    try {
+      const r = await fetch(`${API_URL}/web/print/pdf/fee-report`, {
+        headers: { cookie: `mandela_session=${jar.get(COOKIE)?.value ?? ""}`, "x-mandela-host": host },
+        cache: "no-store",
+      });
+      if (!r.ok) {
+        const body = await r.text();
+        return new NextResponse(body || "fee report unavailable", { status: r.status, headers: { "cache-control": "no-store" } });
+      }
+      return new NextResponse(r.body, {
+        status: 200,
+        headers: { "content-type": "application/pdf", "content-disposition": `inline; filename="fee-report.pdf"`, "cache-control": "no-store" },
+      });
+    } catch {
+      return NextResponse.json({ error: "fee report unavailable" }, { status: 502 });
+    }
+  }
   const kind = kindRaw === "statement" ? "statement" : "report-card";
   const learnerId = url.searchParams.get("learnerId") ?? "";
   if (!/^[0-9a-f-]{36}$/i.test(learnerId)) {

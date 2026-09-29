@@ -185,9 +185,9 @@ export default async function AppHome() {
           />
         )}
 
-        {/* Latest from the school — announcements feed + anomaly flag */}
+        {/* Latest from the school — announcements feed + anomaly flag (stacked, per the column-mode law) */}
         <Reveal delay={200}>
-          <section className="mt-s3h grid gap-s5 lg:grid-cols-2">
+          <section className="mt-s3h grid gap-s5">
             {isAdmin ? <AiAnomalyCard /> : null}
             <Card>
               <CardHead
