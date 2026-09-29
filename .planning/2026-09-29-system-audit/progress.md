@@ -52,6 +52,7 @@
 - 2026-09-29: Phase 11 complete. Shared KpiCard surfaces are now square with a motion-safe hover lift and deeper shadow. Typecheck, bundle budget, theme policy, whitespace, production build, and live localhost response passed.
 - 2026-09-29: Phase 12 implementation replaces the partitioned admissions funnel with a searchable/filterable register. Existing stage progression, enrolment dialog, and Lost action remain per row; new filters use only inquiry fields already returned by the API.
 - 2026-09-29: Phase 12 complete. Admissions filter contract, TypeScript, bundle budget, theme policy, whitespace, production build, and local production login response passed. Production web server restarted on port 3000.
+- 2026-09-29: Phase 13 complete. Library Counter and Overdue now use a single vertical column at all viewport sizes. Typecheck, bundle budget, theme policy, and whitespace validation passed.
 
 ## Errors Encountered
 

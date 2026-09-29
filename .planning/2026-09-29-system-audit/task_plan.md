@@ -45,7 +45,13 @@ Fail closed in production, harden edge/runtime settings, upgrade dependencies, a
 
 ## Next Step
 
-Replace the admissions board partitions with a filterable list.
+Keep Library Counter and Overdue in one vertical column for clearer desk work.
+
+### Phase 13: Library desk column layout
+**Status:** complete
+
+Stack the Counter card above the Overdue card at every viewport without
+changing any library workflow or data.
 
 ### Phase 12: Admissions list conversion
 **Status:** complete

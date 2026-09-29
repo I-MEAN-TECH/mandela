@@ -281,3 +281,7 @@ Post-fix numbers above; regression gates all re-green after the fix.
 
 - [x] Replace the horizontal admissions stage-board with one filterable list
   using existing inquiry fields and actions.
+
+### Library desk column layout (2026-09-29) — complete
+
+- [x] Stack Counter and Overdue cards vertically for a clearer library desk.

@@ -65,7 +65,7 @@ export function LibraryClient({
   };
 
   return (
-    <div className="grid gap-s4 xl:grid-cols-2">
+    <div className="grid gap-s4">
       <Card>
         <CardHead title="Counter" sub="Issue and return are two taps on the barcode." />
         <div className="grid gap-s2 p-s5 sm:grid-cols-4">
