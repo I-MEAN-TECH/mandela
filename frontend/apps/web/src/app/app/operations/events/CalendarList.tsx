@@ -126,7 +126,7 @@ function EditEventDialog({ event, onClose, onSaved }: {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-3">
             <div>
               <label className="mb-1 block text-[12px] font-semibold text-ink-700" htmlFor="ev-start">Starts *</label>
               <input id="ev-start" type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} className="h-11 w-full rounded-sm border border-paper-300 bg-surface px-3 text-[13.5px]" />

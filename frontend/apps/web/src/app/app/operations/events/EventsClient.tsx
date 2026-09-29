@@ -42,7 +42,7 @@ export function EventsClient() {
         action={<Button variant="primary" onClick={() => setOpen((v) => !v)}>{open ? "Close" : "+ New event"}</Button>}
       />
       {open ? (
-        <div className="grid gap-s3 p-s5 sm:grid-cols-2">
+        <div className="flex max-w-xl flex-col gap-s3 p-s5">
           <label className="flex flex-col gap-s1 text-sm">
             <span className="font-medium">Title</span>
             <input className="rounded-md border border-border bg-surface px-3 py-2 text-sm" placeholder="Drama Festival — County round" value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -65,13 +65,13 @@ export function EventsClient() {
             <span className="font-medium">Ends (optional)</span>
             <input type="date" className="rounded-md border border-border bg-surface px-3 py-2 text-sm" value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
           </label>
-          <label className="flex flex-col gap-s1 text-sm sm:col-span-2">
+          <label className="flex flex-col gap-s1 text-sm ">
             <span className="font-medium">Notes (optional)</span>
             <input className="rounded-md border border-border bg-surface px-3 py-2 text-sm" placeholder="Kit packed the night before; buses leave 6:30 AM" value={notes} onChange={(e) => setNotes(e.target.value)} />
           </label>
-          {err ? <p className="text-sm text-danger sm:col-span-2">{err}</p> : null}
-          {ok ? <p className="text-sm text-ok sm:col-span-2">{ok}</p> : null}
-          <div className="sm:col-span-2">
+          {err ? <p className="text-sm text-danger ">{err}</p> : null}
+          {ok ? <p className="text-sm text-ok ">{ok}</p> : null}
+          <div className="">
             <Button variant="primary" disabled={pending} onClick={save}>Add event</Button>
           </div>
         </div>

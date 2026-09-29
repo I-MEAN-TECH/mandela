@@ -4849,6 +4849,27 @@ export async function upsertSection(
   });
 }
 
+/** Delete a section outright. Members/sessions cascade; kit & events detach (SET NULL). Audited. */
+export async function deleteSection(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+  input: { id: string },
+): Promise<{ ok: true }> {
+  if (principal.role !== "admin" && principal.role !== "principal") throw new Error("leaders manage sections");
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    const cur = await c.query<{ name: string; kind: string }>(
+      `SELECT name, kind::text AS kind FROM section WHERE id = $1`, [input.id]);
+    if (!cur.rowCount) throw new Error("section not found");
+    await c.query(`DELETE FROM section WHERE id = $1`, [input.id]);
+    await c.query(
+      `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, before)
+       VALUES ($1, 'staff', 'section.delete', 'section', $2, $3)`,
+      [principal.userId, input.id, JSON.stringify({ name: cur.rows[0]!.name, kind: cur.rows[0]!.kind })],
+    );
+    return { ok: true as const };
+  });
+}
+
 export async function toggleSection(
   dbName: string,
   principal: Extract<Principal, { kind: "staff" }>,
@@ -5912,15 +5933,21 @@ export async function transportOverview(
 export async function upsertRoute(
   dbName: string,
   principal: Extract<Principal, { kind: "staff" }>,
-  input: { name: string; feeTermCents: number },
+  input: { id?: string; name: string; feeTermCents: number },
 ): Promise<{ ok: true }> {
   if (principal.role !== "admin" && principal.role !== "principal") throw new Error("leaders manage routes");
   return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
-    await c.query(
-      `INSERT INTO transport_route (name, fee_term_cents) VALUES ($1,$2)
-       ON CONFLICT (name) DO UPDATE SET fee_term_cents = EXCLUDED.fee_term_cents`,
-      [input.name, input.feeTermCents],
-    );
+    if (input.id) {
+      const cur = await c.query<{ name: string }>(`SELECT name FROM transport_route WHERE id = $1`, [input.id]);
+      if (!cur.rowCount) throw new Error("route not found");
+      await c.query(`UPDATE transport_route SET name = $2, fee_term_cents = $3 WHERE id = $1`, [input.id, input.name, input.feeTermCents]);
+    } else {
+      await c.query(
+        `INSERT INTO transport_route (name, fee_term_cents) VALUES ($1,$2)
+         ON CONFLICT (name) DO UPDATE SET fee_term_cents = EXCLUDED.fee_term_cents`,
+        [input.name, input.feeTermCents],
+      );
+    }
     await c.query(
       `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, after)
        VALUES ($1, 'staff', 'transport.route.upsert', 'transport_route', $2, $3)`,
@@ -5930,18 +5957,64 @@ export async function upsertRoute(
   });
 }
 
-export async function upsertBus(
+/** Delete a route outright. Stops/manifests/trips cascade; buses detach. Audited. */
+export async function deleteRoute(
   dbName: string,
   principal: Extract<Principal, { kind: "staff" }>,
-  input: { regNo: string; capacity: number; routeId?: string | null },
+  input: { id: string },
+): Promise<{ ok: true }> {
+  if (principal.role !== "admin" && principal.role !== "principal") throw new Error("leaders manage routes");
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    const cur = await c.query<{ name: string }>(`SELECT name FROM transport_route WHERE id = $1`, [input.id]);
+    if (!cur.rowCount) throw new Error("route not found");
+    await c.query(`DELETE FROM transport_route WHERE id = $1`, [input.id]);
+    await c.query(
+      `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, before)
+       VALUES ($1, 'staff', 'transport.route.delete', 'transport_route', $2, $3)`,
+      [principal.userId, input.id, JSON.stringify({ name: cur.rows[0]!.name })],
+    );
+    return { ok: true as const };
+  });
+}
+
+/** Delete a bus outright. Trips cascade. Audited. */
+export async function deleteBus(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+  input: { id: string },
 ): Promise<{ ok: true }> {
   if (principal.role !== "admin" && principal.role !== "principal") throw new Error("leaders manage buses");
   return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    const cur = await c.query<{ reg_no: string }>(`SELECT reg_no FROM transport_bus WHERE id = $1`, [input.id]);
+    if (!cur.rowCount) throw new Error("bus not found");
+    await c.query(`DELETE FROM transport_bus WHERE id = $1`, [input.id]);
     await c.query(
-      `INSERT INTO transport_bus (reg_no, capacity, route_id) VALUES ($1,$2,$3)
-       ON CONFLICT (reg_no) DO UPDATE SET capacity = EXCLUDED.capacity, route_id = EXCLUDED.route_id`,
-      [input.regNo, input.capacity, input.routeId ?? null],
+      `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, before)
+       VALUES ($1, 'staff', 'transport.bus.delete', 'transport_bus', $2, $3)`,
+      [principal.userId, input.id, JSON.stringify({ reg_no: cur.rows[0]!.reg_no })],
     );
+    return { ok: true as const };
+  });
+}
+
+export async function upsertBus(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+  input: { id?: string; regNo: string; capacity: number; routeId?: string | null },
+): Promise<{ ok: true }> {
+  if (principal.role !== "admin" && principal.role !== "principal") throw new Error("leaders manage buses");
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    if (input.id) {
+      const cur = await c.query<{ reg_no: string }>(`SELECT reg_no FROM transport_bus WHERE id = $1`, [input.id]);
+      if (!cur.rowCount) throw new Error("bus not found");
+      await c.query(`UPDATE transport_bus SET reg_no = $2, capacity = $3, route_id = $4 WHERE id = $1`, [input.id, input.regNo, input.capacity, input.routeId ?? null]);
+    } else {
+      await c.query(
+        `INSERT INTO transport_bus (reg_no, capacity, route_id) VALUES ($1,$2,$3)
+         ON CONFLICT (reg_no) DO UPDATE SET capacity = EXCLUDED.capacity, route_id = EXCLUDED.route_id`,
+        [input.regNo, input.capacity, input.routeId ?? null],
+      );
+    }
     await c.query(
       `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, after)
        VALUES ($1, 'staff', 'transport.bus.upsert', 'transport_bus', $2, $3)`,

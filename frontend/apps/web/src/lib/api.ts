@@ -1334,6 +1334,15 @@ export async function upsertSectionAction(input: { id?: string; name: string; ki
 export async function toggleSectionAction(input: { id: string; enabled: boolean }) {
   return mutate("/web/admin/sections/toggle", input);
 }
+export async function deleteSectionAction(input: { id: string }) {
+  return mutate("/web/admin/sections/delete", input);
+}
+export async function deleteRouteAction(input: { id: string }) {
+  return mutate("/web/admin/transport/route-delete", input);
+}
+export async function deleteBusAction(input: { id: string }) {
+  return mutate("/web/admin/transport/bus-delete", input);
+}
 export async function addSectionMembersAction(input: { sectionId: string; learnerIds: string[] }) {
   return mutate("/web/admin/sections/members/add", input);
 }
@@ -1539,10 +1548,10 @@ export interface TransportData {
 export async function getTransport() {
   return read<TransportData | { error: string }>("/web/admin/transport", { error: "unavailable" });
 }
-export async function upsertRouteAction(input: { name: string; feeTermCents: number }) {
+export async function upsertRouteAction(input: { id?: string; name: string; feeTermCents: number }) {
   return mutate("/web/admin/transport/route", input);
 }
-export async function upsertBusAction(input: { regNo: string; capacity: number; routeId?: string | null }) {
+export async function upsertBusAction(input: { id?: string; regNo: string; capacity: number; routeId?: string | null }) {
   return mutate("/web/admin/transport/bus", input);
 }
 export async function addStopAction(input: { routeId: string; name: string; pickupAt?: string | null; sort?: number }) {

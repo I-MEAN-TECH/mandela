@@ -56,7 +56,7 @@ export function FacilitiesClient({ rows }: { rows: RepairRow[] }) {
           action={<Button variant="primary" onClick={() => setOpen((v) => !v)}>{open ? "Close" : "+ Report damage"}</Button>}
         />
         {open ? (
-          <div className="grid gap-s3 p-s5 sm:grid-cols-3">
+          <div className="flex max-w-xl flex-col gap-s3 p-s5">
             <label className="flex flex-col gap-s1 text-sm">
               <span className="font-medium">Room / area</span>
               <input className="rounded-md border border-border bg-surface px-3 py-2 text-sm" placeholder="G7B classroom" value={room} onChange={(e) => setRoom(e.target.value)} />
@@ -85,13 +85,13 @@ export function FacilitiesClient({ rows }: { rows: RepairRow[] }) {
               <span className="font-medium">Replacement value (Ksh, optional)</span>
               <input type="number" min={0} className="rounded-md border border-border bg-surface px-3 py-2 text-sm" placeholder="3500" value={val} onChange={(e) => setVal(e.target.value)} />
             </label>
-            <label className="flex flex-col gap-s1 text-sm sm:col-span-3">
+            <label className="flex flex-col gap-s1 text-sm">
               <span className="font-medium">Note (optional)</span>
               <input className="rounded-md border border-border bg-surface px-3 py-2 text-sm" placeholder="Rear-left leg cracked, two learners affected" value={note} onChange={(e) => setNote(e.target.value)} />
             </label>
-            {err ? <p className="text-sm text-danger sm:col-span-3">{err}</p> : null}
-            {msg ? <p className="text-sm text-ok sm:col-span-3">{msg}</p> : null}
-            <div className="sm:col-span-3">
+            {err ? <p className="text-sm text-danger">{err}</p> : null}
+            {msg ? <p className="text-sm text-ok">{msg}</p> : null}
+            <div>
               <Button variant="primary" disabled={pending} onClick={file}>File report</Button>
             </div>
           </div>

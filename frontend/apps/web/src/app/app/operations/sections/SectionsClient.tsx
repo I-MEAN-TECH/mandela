@@ -6,6 +6,7 @@ import { Button, Card, CardHead, Money, StatusPill, EmptyState } from "@mandela/
 import {
   upsertSectionAction,
   toggleSectionAction,
+  deleteSectionAction,
   getSectionDetail,
   addSectionMembersAction,
   removeSectionMemberAction,
@@ -27,20 +28,41 @@ export function SectionsClient({ rows, staff, canManage = true }: { rows: Sectio
   const router = useRouter();
   const [pending, start] = useTransition();
   const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<string>("sports");
   const [head, setHead] = useState<string>("");
   const [err, setErr] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
+  const openCreate = () => {
+    setEditId(null); setName(""); setKind("sports"); setHead(""); setErr(null);
+    setShowForm((v) => !v);
+  };
+
+  const openEdit = (s: SectionRow) => {
+    setEditId(s.id); setName(s.name); setKind(s.kind); setHead(s.head_staff_id ?? ""); setErr(null);
+    setShowForm(true);
+  };
+
   const save = () => {
     setErr(null);
     if (name.trim().length < 2) return setErr("Give the section a name (2+ characters).");
     start(async () => {
-      const r = await upsertSectionAction({ name: name.trim(), kind, headStaffId: head || null });
+      const r = await upsertSectionAction({ id: editId ?? undefined, name: name.trim(), kind, headStaffId: head || null });
       if (!r.ok) { setErr(r.error ?? "Could not save the section"); return; }
-      setName(""); setHead("");
+      setName(""); setHead(""); setEditId(null);
       setShowForm(false);
+      router.refresh();
+    });
+  };
+
+  const remove = (s: SectionRow) => {
+    const members = s.members > 0 ? ` It has ${s.members} member${s.members > 1 ? "s" : ""} — they will be removed from the register.` : "";
+    if (!confirm(`Delete “${s.name}” permanently?${members} Its sessions are deleted; kit and events are detached. This cannot be undone.`)) return;
+    start(async () => {
+      const r = await deleteSectionAction({ id: s.id });
+      if (!r.ok) { setErr(r.error ?? "Could not delete the section"); setShowForm(true); return; }
       router.refresh();
     });
   };
@@ -59,14 +81,14 @@ export function SectionsClient({ rows, staff, canManage = true }: { rows: Sectio
           title="The register"
           sub="Every section is a row — same engine, same four capabilities. Tap a section to open its register, sessions and kit."
           action={canManage ? (
-            <Button variant="primary" onClick={() => setShowForm((v) => !v)}>
+            <Button variant="primary" onClick={openCreate}>
               {showForm ? "Close" : "+ New section"}
             </Button>
           ) : undefined}
         />
 
         {showForm ? (
-          <div className="mb-s5 grid gap-s3 rounded-lg border border-border bg-surface p-s4 sm:grid-cols-3">
+          <div className="mb-s5 flex max-w-xl flex-col gap-s3 rounded-lg border border-border bg-surface p-s4">
             <label className="flex flex-col gap-s1 text-sm">
               <span className="font-medium">Name</span>
               <input
@@ -93,9 +115,9 @@ export function SectionsClient({ rows, staff, canManage = true }: { rows: Sectio
                 ))}
               </select>
             </label>
-            {err ? <p className="text-sm text-danger sm:col-span-3">{err}</p> : null}
-            <div className="sm:col-span-3">
-              <Button variant="primary" disabled={pending} onClick={save}>Save section</Button>
+            {err ? <p className="text-sm text-danger">{err}</p> : null}
+            <div>
+              <Button variant="primary" disabled={pending} onClick={save}>{editId ? "Save changes" : "Create section"}</Button>
               <span className="ml-s3 text-xs text-muted">Appointing a patron writes the audited hat to Duties.</span>
             </div>
           </div>
@@ -125,13 +147,29 @@ export function SectionsClient({ rows, staff, canManage = true }: { rows: Sectio
                   </div>
                 </button>
                 {canManage ? (
-                  <button
-                    type="button"
-                    className="self-start text-xs text-muted hover:text-text"
-                    onClick={() => toggle(s.id, !s.enabled)}
-                  >
-                    {s.enabled ? "disable" : "enable"}
-                  </button>
+                  <div className="flex items-center gap-s3 pt-s1">
+                    <button
+                      type="button"
+                      className="text-xs text-muted underline-offset-2 hover:text-text hover:underline"
+                      onClick={() => openEdit(s)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs text-muted underline-offset-2 hover:text-text hover:underline"
+                      onClick={() => toggle(s.id, !s.enabled)}
+                    >
+                      {s.enabled ? "Disable" : "Enable"}
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs text-muted underline-offset-2 hover:text-danger hover:underline"
+                      onClick={() => remove(s)}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 ) : null}
               </div>
             ))}

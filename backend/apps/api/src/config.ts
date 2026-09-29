@@ -65,6 +65,7 @@ export const SQL_PATHS = {
   schoolDriverTransportRead: path.join(BACKEND_ROOT, "db", "school", "050_driver_transport_read.sql"),
   schoolPulseCrossRoleReads: path.join(BACKEND_ROOT, "db", "school", "051_pulse_cross_role_reads.sql"),
   schoolPermMatrixGrants: path.join(BACKEND_ROOT, "db", "school", "052_perm_matrix_grants.sql"),
+  schoolLeaderDeletePolicies: path.join(BACKEND_ROOT, "db", "school", "053_leader_delete_policies.sql"),
 } as const;
 
 const envSchema = z.object({

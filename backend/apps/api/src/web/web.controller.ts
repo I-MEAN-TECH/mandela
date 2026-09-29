@@ -1644,6 +1644,16 @@ export class WebController {
     return web.toggleSection(tenant.dbName, principal, input);
   }
 
+  @Post("admin/sections/delete")
+  @HttpCode(200)
+  async sectionDelete(@Req() req: Request, @Body() body: unknown) {
+    const input = z.object({ id: z.string().uuid() }).parse(body);
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { error: "staff session required" };
+    return web.deleteSection(tenant.dbName, principal, input);
+  }
+
   @Post("admin/sections/members/add")
   @HttpCode(200)
   async sectionMembersAdd(@Req() req: Request, @Body() body: unknown) {
@@ -1943,7 +1953,7 @@ export class WebController {
   @Post("admin/transport/route")
   @HttpCode(200)
   async transportRoute(@Req() req: Request, @Body() body: unknown) {
-    const input = z.object({ name: z.string().min(2).max(60), feeTermCents: z.number().int().min(0) }).parse(body);
+    const input = z.object({ id: z.string().uuid().optional(), name: z.string().min(2).max(60), feeTermCents: z.number().int().min(0) }).parse(body);
     const tenant = await tenantFromReq(req);
     const principal = principalFromReq(req);
     if (!principal || principal.kind !== "staff") return { error: "staff session required" };
@@ -1953,7 +1963,7 @@ export class WebController {
   @Post("admin/transport/bus")
   @HttpCode(200)
   async transportBus(@Req() req: Request, @Body() body: unknown) {
-    const input = z.object({ regNo: z.string().min(3).max(20), capacity: z.number().int().min(1).max(100), routeId: z.string().uuid().nullable().optional() }).parse(body);
+    const input = z.object({ id: z.string().uuid().optional(), regNo: z.string().min(3).max(20), capacity: z.number().int().min(1).max(100), routeId: z.string().uuid().nullable().optional() }).parse(body);
     const tenant = await tenantFromReq(req);
     const principal = principalFromReq(req);
     if (!principal || principal.kind !== "staff") return { error: "staff session required" };
@@ -1968,6 +1978,26 @@ export class WebController {
     const principal = principalFromReq(req);
     if (!principal || principal.kind !== "staff") return { error: "staff session required" };
     return web.addStopToRoute(tenant.dbName, principal, input);
+  }
+
+  @Post("admin/transport/route-delete")
+  @HttpCode(200)
+  async transportRouteDelete(@Req() req: Request, @Body() body: unknown) {
+    const input = z.object({ id: z.string().uuid() }).parse(body);
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { error: "staff session required" };
+    return web.deleteRoute(tenant.dbName, principal, input);
+  }
+
+  @Post("admin/transport/bus-delete")
+  @HttpCode(200)
+  async transportBusDelete(@Req() req: Request, @Body() body: unknown) {
+    const input = z.object({ id: z.string().uuid() }).parse(body);
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { error: "staff session required" };
+    return web.deleteBus(tenant.dbName, principal, input);
   }
 
   @Post("admin/transport/trip")
