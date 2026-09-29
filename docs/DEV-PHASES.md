@@ -253,3 +253,11 @@ Post-fix numbers above; regression gates all re-green after the fix.
 - `docs/DEPLOY-CHECKLIST.md` — ordered launch pre-flight, references OPS-RUNBOOK.
 - Demo tenant cleanup: 38 gate scratch staff deactivated (rows kept); demo
   logins (incl. counter/driver 49371701 pair) untouched.
+
+### Data management clarity (2026-09-29) — complete
+
+- [x] Default operational data sections to compact List mode while preserving
+  dashboard Cards/KPIs/charts.
+- [x] Add accessible search, field filters, result counts, and pagination to
+  learner and payment ledgers; retain specialized filters already present in
+  reports, exams, and audit history.

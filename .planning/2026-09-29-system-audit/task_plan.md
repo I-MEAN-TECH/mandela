@@ -45,7 +45,13 @@ Fail closed in production, harden edge/runtime settings, upgrade dependencies, a
 
 ## Next Step
 
-Configure and verify a real production OTP delivery provider before enabling guardian production sign-in.
+Continue the separately scoped public website and product-handoff phase.
+
+### Phase 8: List-first data management
+**Status:** complete
+
+Make operational data sections list-first while retaining dashboard overview
+cards, then add accessible filters and pagination for high-volume ledgers.
 
 ### Phase 6: Public website and product handoff
 **Status:** in_progress

@@ -5,6 +5,33 @@ import { useRouter } from "next/navigation";
 import { Button, Card, CardHead, StatusPill } from "@mandela/ui";
 import { upsertLearnerAction, type LearnerRow, type ClassRow } from "@/lib/api";
 
+const PAGE_SIZE = 25;
+
+export type LearnerFilters = {
+  query?: string;
+  className?: string;
+  status?: "all" | "active" | "inactive";
+  gender?: "all" | "M" | "F";
+};
+
+type FilterableLearner = Pick<LearnerRow, "id" | "name" | "admission_no" | "class" | "gender" | "status">;
+
+/** Filters only rows the page already received; RLS remains authoritative. */
+export function filterLearners<T extends FilterableLearner>(rows: T[], filters: LearnerFilters): T[] {
+  const term = filters.query?.trim().toLowerCase() ?? "";
+  return rows.filter((learner) => {
+    if (filters.className && learner.class !== filters.className) return false;
+    if (filters.status === "active" && learner.status !== "active") return false;
+    if (filters.status === "inactive" && learner.status === "active") return false;
+    if (filters.gender && filters.gender !== "all" && learner.gender !== filters.gender) return false;
+    return !term || learner.name.toLowerCase().includes(term) || learner.admission_no.toLowerCase().includes(term) || (learner.class ?? "").toLowerCase().includes(term);
+  });
+}
+
+export function paginateRows<T>(rows: T[], page: number, pageSize = PAGE_SIZE): T[] {
+  return rows.slice(Math.max(0, page) * pageSize, Math.max(0, page + 1) * pageSize);
+}
+
 /**
  * LearnerActions — the roster's action layer (the edit pass).
  * Search box filters the roll live; every row carries Edit (identity,
@@ -21,23 +48,19 @@ export function LearnerRoster({ rows, classes, canEdit }: {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
+  const [className, setClassName] = useState("");
+  const [gender, setGender] = useState<"all" | "M" | "F">("all");
+  const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<LearnerRow | null>(null);
   const [adding, setAdding] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return rows.filter((l) => {
-      if (status === "active" && l.status !== "active") return false;
-      if (status === "inactive" && l.status === "active") return false;
-      if (!term) return true;
-      return (
-        l.name.toLowerCase().includes(term) ||
-        l.admission_no.toLowerCase().includes(term) ||
-        (l.class ?? "").toLowerCase().includes(term)
-      );
-    });
-  }, [rows, q, status]);
+  const filtered = useMemo(() => filterLearners(rows, { query: q, status, className, gender }), [rows, q, status, className, gender]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const visibleRows = paginateRows(filtered, Math.min(page, pageCount - 1));
+  const classNames = useMemo(() => [...new Set(rows.map((row) => row.class).filter((value): value is string => Boolean(value)))].sort(), [rows]);
+
+  function resetPage() { setPage(0); }
 
   return (
     <Card>
@@ -49,7 +72,7 @@ export function LearnerRoster({ rows, classes, canEdit }: {
             <input
               type="search"
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => { setQ(e.target.value); resetPage(); }}
               placeholder="Name, adm no or class…"
               aria-label="Filter the roll"
               className="h-9 w-36 rounded-pill border border-paper-300 bg-surface px-3.5 text-[12.5px] text-ink-950 outline-none focus:border-pine-400 sm:w-44"
@@ -63,7 +86,7 @@ export function LearnerRoster({ rows, classes, canEdit }: {
           <button
             key={s}
             type="button"
-            onClick={() => setStatus(s)}
+            onClick={() => { setStatus(s); resetPage(); }}
             className={`h-8 rounded-pill px-3.5 text-[12px] font-semibold transition-colors ${
               status === s ? "bg-pine-700 text-white" : "border border-paper-300 text-ink-600 hover:bg-paper-100"
             }`}
@@ -71,6 +94,18 @@ export function LearnerRoster({ rows, classes, canEdit }: {
             {s === "all" ? "All" : s === "active" ? "Active" : "Inactive"}
           </button>
         ))}
+      </div>
+      <div className="grid gap-2 px-s5 pb-s4 sm:grid-cols-2" aria-label="Learner filters">
+        <label className="text-[12px] font-semibold text-ink-700">Class
+          <select value={className} onChange={(e) => { setClassName(e.target.value); resetPage(); }} className="mt-1 h-9 w-full rounded-sm border border-paper-300 bg-surface px-2 text-[12.5px]">
+            <option value="">All classes</option>{classNames.map((name) => <option key={name} value={name}>{name}</option>)}
+          </select>
+        </label>
+        <label className="text-[12px] font-semibold text-ink-700">Gender
+          <select value={gender} onChange={(e) => { setGender(e.target.value as typeof gender); resetPage(); }} className="mt-1 h-9 w-full rounded-sm border border-paper-300 bg-surface px-2 text-[12.5px]">
+            <option value="all">All genders</option><option value="F">Female</option><option value="M">Male</option>
+          </select>
+        </label>
       </div>
       {msg ? (
         <p role="status" className={`px-s5 pb-s2 text-[12.5px] font-semibold ${msg.ok ? "text-ok" : "text-danger"}`}>{msg.text}</p>
@@ -90,7 +125,7 @@ export function LearnerRoster({ rows, classes, canEdit }: {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((l) => (
+              {visibleRows.map((l) => (
                 <tr key={l.id} className="border-b border-paper-200 last:border-0 hover:bg-paper-50">
                   <td className="px-s3 py-s3 font-mono text-xs">{l.admission_no}</td>
                   <td className="px-s3 py-s3">
@@ -112,6 +147,12 @@ export function LearnerRoster({ rows, classes, canEdit }: {
           </table>
         </div>
       )}
+      {filtered.length > PAGE_SIZE ? (
+        <div className="flex items-center justify-between gap-3 border-t border-paper-200 px-s5 py-s3 text-[12.5px] text-ink-600">
+          <span>{Math.min(page * PAGE_SIZE + 1, filtered.length)}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
+          <span className="flex gap-2"><Button size="sm2" variant="ghost" disabled={page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))}>Previous</Button><Button size="sm2" variant="ghost" disabled={page >= pageCount - 1} onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}>Next</Button></span>
+        </div>
+      ) : null}
       {editing ? (
         <EditLearnerDialog
           learner={editing}

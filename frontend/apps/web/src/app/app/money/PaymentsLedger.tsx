@@ -1,11 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardHead, DataTable, EmptyState, Money, StatusPill } from "@mandela/ui";
 import { updatePaymentAction, type PaymentRow, type PaymentDetails } from "@/lib/api";
 
 const METHODS = ["mpesa", "cash", "bank", "cheque"] as const;
+const PAGE_SIZE = 25;
+
+export type PaymentFilters = { query?: string; className?: string; method?: string; state?: string; dateFrom?: string; dateTo?: string };
+type FilterablePayment = Pick<PaymentRow, "receipt_no" | "learner" | "class_name" | "method" | "state" | "paid_at">;
+
+/** Narrows the already-authorized ledger response; it never changes access. */
+export function filterPayments<T extends FilterablePayment>(payments: T[], filters: PaymentFilters): T[] {
+  const term = filters.query?.trim().toLowerCase() ?? "";
+  return payments.filter((payment) => {
+    const day = payment.paid_at.slice(0, 10);
+    if (filters.className && payment.class_name !== filters.className) return false;
+    if (filters.method && payment.method !== filters.method) return false;
+    if (filters.state && payment.state !== filters.state) return false;
+    if (filters.dateFrom && day < filters.dateFrom) return false;
+    if (filters.dateTo && day > filters.dateTo) return false;
+    return !term || payment.receipt_no.toLowerCase().includes(term) || payment.learner.toLowerCase().includes(term) || (payment.class_name ?? "").toLowerCase().includes(term);
+  });
+}
+
+export function paginatePayments<T>(rows: T[], page: number, pageSize = PAGE_SIZE): T[] {
+  return rows.slice(Math.max(0, page) * pageSize, Math.max(0, page + 1) * pageSize);
+}
 
 /**
  * The payments ledger — newest first, and every row answers for itself:
@@ -18,12 +40,35 @@ export function PaymentsLedger({ payments, canEdit }: { payments: PaymentRow[]; 
   const [viewing, setViewing] = useState<PaymentRow | null>(null);
   const [editing, setEditing] = useState<PaymentRow | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [query, setQuery] = useState("");
+  const [className, setClassName] = useState("");
+  const [method, setMethod] = useState("");
+  const [state, setState] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(0);
+  const filtered = useMemo(() => filterPayments(payments, { query, className, method, state, dateFrom, dateTo }), [payments, query, className, method, state, dateFrom, dateTo]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const visiblePayments = paginatePayments(filtered, Math.min(page, pageCount - 1));
+  const classNames = useMemo(() => [...new Set(payments.map((payment) => payment.class_name).filter((value): value is string => Boolean(value)))].sort(), [payments]);
+  const states = useMemo(() => [...new Set(payments.map((payment) => payment.state))].sort(), [payments]);
+  const resetPage = () => setPage(0);
 
   return (
     <Card>
       <CardHead title="Recent payments" sub="The ledger — newest first. Every row: view, edit, print." />
+      <div className="grid gap-2 border-b border-paper-200 pb-s4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Payment filters">
+        <label className="text-[12px] font-semibold text-ink-700">Search receipt or learner<input type="search" value={query} onChange={(event) => { setQuery(event.target.value); resetPage(); }} placeholder="Receipt, learner or class…" className="mt-1 h-9 w-full rounded-sm border border-paper-300 bg-surface px-2.5 text-[12.5px]" /></label>
+        <label className="text-[12px] font-semibold text-ink-700">Class<select value={className} onChange={(event) => { setClassName(event.target.value); resetPage(); }} className="mt-1 h-9 w-full rounded-sm border border-paper-300 bg-surface px-2 text-[12.5px]"><option value="">All classes</option>{classNames.map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
+        <label className="text-[12px] font-semibold text-ink-700">Method<select value={method} onChange={(event) => { setMethod(event.target.value); resetPage(); }} className="mt-1 h-9 w-full rounded-sm border border-paper-300 bg-surface px-2 text-[12.5px]"><option value="">All methods</option>{METHODS.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+        <label className="text-[12px] font-semibold text-ink-700">State<select value={state} onChange={(event) => { setState(event.target.value); resetPage(); }} className="mt-1 h-9 w-full rounded-sm border border-paper-300 bg-surface px-2 text-[12.5px]"><option value="">All states</option>{states.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+        <label className="text-[12px] font-semibold text-ink-700">From date<input type="date" value={dateFrom} onChange={(event) => { setDateFrom(event.target.value); resetPage(); }} className="mt-1 h-9 w-full rounded-sm border border-paper-300 bg-surface px-2 text-[12.5px]" /></label>
+        <label className="text-[12px] font-semibold text-ink-700">To date<input type="date" value={dateTo} onChange={(event) => { setDateTo(event.target.value); resetPage(); }} className="mt-1 h-9 w-full rounded-sm border border-paper-300 bg-surface px-2 text-[12.5px]" /></label>
+      </div>
       {payments.length === 0 ? (
         <EmptyState title="No payments yet" body="Confirmed payments appear here instantly." />
+      ) : filtered.length === 0 ? (
+        <EmptyState title="No payments match" body="Clear or widen the ledger filters to see authorized payments." />
       ) : (
         <>
           <DataTable
@@ -36,7 +81,7 @@ export function PaymentsLedger({ payments, canEdit }: { payments: PaymentRow[]; 
               { key: "paid_at", title: "Paid at" },
               { key: "actions", title: "", align: "right" },
             ]}
-            rows={payments.map((p) => ({
+            rows={visiblePayments.map((p) => ({
               receipt_no: <span className="font-mono text-xs">{p.receipt_no}</span>,
               learner: (
                 <span>
@@ -81,6 +126,15 @@ export function PaymentsLedger({ payments, canEdit }: { payments: PaymentRow[]; 
               ),
             }))}
           />
+          {filtered.length > PAGE_SIZE ? (
+            <div className="mt-3 flex items-center justify-between gap-3 text-[12.5px] text-ink-600">
+              <span>{Math.min(page * PAGE_SIZE + 1, filtered.length)}–{Math.min((page + 1) * PAGE_SIZE, filtered.length)} of {filtered.length}</span>
+              <span className="flex gap-2">
+                <Button size="sm2" variant="ghost" disabled={page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))}>Previous</Button>
+                <Button size="sm2" variant="ghost" disabled={page >= pageCount - 1} onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}>Next</Button>
+              </span>
+            </div>
+          ) : null}
           {msg ? (
             <p className={msg.ok ? "mt-3 text-[12.5px] text-pine-700" : "mt-3 text-[12.5px] text-danger"} role="status">{msg.text}</p>
           ) : null}

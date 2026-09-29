@@ -10,6 +10,9 @@
     "test:navigation": "tsx src/app/app/navModules.test.ts",
     "test:role-pulses": "tsx src/app/app/RolePulses.test.ts",
     "test:payments": "tsx src/app/app/money/PayForm.test.ts",
+    "test:view-mode": "tsx ../../packages/ui/src/components/ViewMode.test.ts",
+    "test:learners": "tsx src/app/app/people/learners/LearnerActions.test.ts",
+    "test:ledger": "tsx src/app/app/money/PaymentsLedger.test.ts",
     "check:budget": "node scripts/check-bundle.mjs"
   },
   "dependencies": {

@@ -31,13 +31,18 @@ export function viewScopeOf(pathname: string): string {
   return "/" + seg.slice(0, 2).join("/");
 }
 
-/** Stored mode for a scope; anything unknown reads as "cards". */
+/** Dashboards are visual overviews; operational sections are compact ledgers. */
+export function defaultViewForScope(scope: string): ViewMode {
+  return scope === "/app" ? "cards" : "list";
+}
+
+/** Stored mode for a scope; anything unknown reads as the scope default. */
 export function readStoredView(scope: string): ViewMode {
   try {
     const all = JSON.parse(localStorage.getItem(VIEW_KEY) ?? "{}") as Record<string, unknown>;
-    return all[scope] === "list" ? "list" : "cards";
+    return all[scope] === "list" || all[scope] === "cards" ? all[scope] : defaultViewForScope(scope);
   } catch {
-    return "cards";
+    return defaultViewForScope(scope);
   }
 }
 
@@ -53,7 +58,7 @@ function applyView(scope: string, mode: ViewMode) {
  * <body> in its root layout. Runs after the streamed <main> exists and
  * before the user sees the page.
  */
-export const viewBootstrapScript = `(function(){try{var K="mandela_view";function sc(p){var s=p.split("?")[0].split("/").filter(Boolean);return"/"+s.slice(0,2).join("/")}var a=null;try{a=JSON.parse(localStorage.getItem(K)||"null")}catch(e){}var m=document.querySelector("main");if(!m||!a)return;var g=sc(location.pathname);if(a[g]==="list"){m.setAttribute("data-view","list");m.setAttribute("data-viewscope",g)}}catch(e){}})()`;
+export const viewBootstrapScript = `(function(){try{var K="mandela_view";function sc(p){var s=p.split("?")[0].split("/").filter(Boolean);return"/"+s.slice(0,2).join("/")}var a=null;try{a=JSON.parse(localStorage.getItem(K)||"null")}catch(e){}var m=document.querySelector("main");if(!m)return;var g=sc(location.pathname);var v=a&& (a[g]==="list"||a[g]==="cards")?a[g]:(g==="/app"?"cards":"list");m.setAttribute("data-view",v);m.setAttribute("data-viewscope",g)}catch(e){}})()`;
 
 /** Tiny inline glyphs — the ui package has no icon dependency. */
 function CardsGlyph() {
@@ -81,7 +86,7 @@ function ListGlyph() {
  * app section (viewScopeOf of the current pathname) owned by the shell.
  */
 export function ViewToggle({ scope }: { scope: string }) {
-  const [mode, setMode] = useState<ViewMode>("cards");
+  const [mode, setMode] = useState<ViewMode>(() => defaultViewForScope(scope));
   const [ready, setReady] = useState(false);
 
   // Re-read + re-apply on every section change (client navs keep <main> alive).
