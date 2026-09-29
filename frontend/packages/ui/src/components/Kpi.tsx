@@ -42,7 +42,7 @@ export function KpiCard({
     <section
       data-kpi=""
       className={cn(
-        "flex min-w-0 flex-col rounded border p-s5 shadow-1",
+        "flex min-w-0 flex-col rounded-none border p-s5 shadow-1 transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(.22,1,.36,1)] hover:-translate-y-0.5 hover:shadow-2 motion-reduce:hover:translate-y-0 motion-reduce:hover:shadow-1 motion-reduce:transition-none",
         ink ? "border-brand-deep bg-brand-deep text-brand-deep-contrast" : "border-border bg-surface",
         className,
       )}

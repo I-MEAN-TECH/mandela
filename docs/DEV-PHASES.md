@@ -271,3 +271,8 @@ Post-fix numbers above; regression gates all re-green after the fix.
 
 - [x] Standardize KPI cards: icon at top-right, value at top-left, label and
   supporting detail beneath; preserve responsive and dark-anchor variants.
+
+### KPI card surface interaction (2026-09-29) — complete
+
+- [x] Make shared KPI cards square and add a reduced-motion-safe hover lift
+  with a deeper shadow.

@@ -45,8 +45,13 @@ Fail closed in production, harden edge/runtime settings, upgrade dependencies, a
 
 ## Next Step
 
-Standardize all shared KPI cards: icon top-right, metric top-left, details
-below, across every dashboard.
+Make every shared KPI card square and add a restrained hover lift/shadow.
+
+### Phase 11: KPI card surface interaction
+**Status:** complete
+
+Update the shared `KpiCard` surface only, preserving the icon well, responsive
+layout, and reduced-motion behavior.
 
 ### Phase 10: Shared KPI card hierarchy
 **Status:** complete
