@@ -21,6 +21,7 @@ must be green before families touch it. ASCII only.
 - [ ] Postgres reachable and NOT the embedded dev server
       (`POSTGRES_HOST` set -> embedded never starts).
 - [ ] `WEB_SESSION_SECRET` set to a long random string (dev default is public).
+- [ ] `CONTROL_PLANE_TOKEN`, `PROVISION_TOKEN`, and `VAULT_MASTER_KEY` are distinct 32+ character secrets, stored outside browser-accessible configuration.
 - [ ] `WEB_ORIGIN` lists the real site + product origins (comma-separated).
 - [ ] `NEXT_PUBLIC_APP_ORIGIN` set so site links into the product are absolute.
 - [ ] `WEB_DEFAULT_TENANT` = the school slug this deployment serves.
@@ -70,6 +71,7 @@ node backend/apps/api/src/scripts/smoke-money.mjs
 
 - [ ] cron the backup script (OPS-RUNBOOK §6), verify one archive
       decompresses and contains a dump header.
+- [ ] Backup storage is encrypted, replicated off-host, and restore credentials are restricted to operations staff.
 - [ ] Restore drill done once before launch, quarterly after.
 - [ ] Hand-over promise: latest dump on exit (or Settings -> "Download all
       data" for the JSON export), plus board pack PDFs from Insights.

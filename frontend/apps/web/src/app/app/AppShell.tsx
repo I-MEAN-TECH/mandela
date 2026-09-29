@@ -7,13 +7,11 @@ import { NavPill } from "@/components/NavPill";
 import { SearchBox } from "@/components/SearchBox";
 import { BellMenu } from "@/components/BellMenu";
 import { ProfileMenu } from "@/components/ProfileMenu";
-import { NAV_CHILDREN, CHILD_ICONS } from "./navModules";
+import { NAV_CHILDREN, CHILD_ICONS, TOP_LEVEL_ICONS } from "./navModules";
 import { SyncBanner } from "@/components/SyncBanner";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import {
-  LayoutDashboard, Landmark, GraduationCap, Users, ChartLine, Settings,
-  CalendarCheck, Banknote, ClipboardCheck, FileText, ArrowLeftRight, HandCoins,
-  ClipboardList, IdCard, Receipt, Sparkles, LogOut, Route, Check, HeartPulse, Store,
+  LayoutDashboard, Sparkles, LogOut,
 } from "lucide-react";
 import { SubChips } from "./SubChips";
 
@@ -45,37 +43,6 @@ function useViewMode() {
  * topbar (page title, search field, bell with dot, user chip). The profile
  * avatar shows at every width — on phones it is the only account control.
  */
-
-const ICONS: Record<string, React.ReactNode> = {
-  Today: <LayoutDashboard size={18} strokeWidth={1.75} aria-hidden />,
-  Money: <Landmark size={18} strokeWidth={1.75} aria-hidden />,
-  Spend: <HandCoins size={18} strokeWidth={1.75} aria-hidden />,
-  Care: <HeartPulse size={18} strokeWidth={1.75} aria-hidden />,
-  Store: <Store size={18} strokeWidth={1.75} aria-hidden />, // legacy 024-era label
-  Academics: <GraduationCap size={18} strokeWidth={1.75} aria-hidden />,
-  Operations: <CalendarCheck size={18} strokeWidth={1.75} aria-hidden />,
-  People: <Users size={18} strokeWidth={1.75} aria-hidden />,
-  Insights: <ChartLine size={18} strokeWidth={1.75} aria-hidden />,
-  Settings: <Settings size={18} strokeWidth={1.75} aria-hidden />,
-  // Role dashboards
-  Collect: <Banknote size={18} strokeWidth={1.75} aria-hidden />,
-  Approve: <ClipboardCheck size={18} strokeWidth={1.75} aria-hidden />,
-  Reports: <FileText size={18} strokeWidth={1.75} aria-hidden />,
-  Reconcile: <ArrowLeftRight size={18} strokeWidth={1.75} aria-hidden />,
-  Pay: <HandCoins size={18} strokeWidth={1.75} aria-hidden />,
-  Mark: <ClipboardCheck size={18} strokeWidth={1.75} aria-hidden />,
-  Class: <Users size={18} strokeWidth={1.75} aria-hidden />,
-  Directory: <IdCard size={18} strokeWidth={1.75} aria-hidden />,
-  Levies: <Receipt size={18} strokeWidth={1.75} aria-hidden />,
-  Broadcast: <Sparkles size={18} strokeWidth={1.75} aria-hidden />,
-  Messages: <Sparkles size={18} strokeWidth={1.75} aria-hidden />,
-  Homework: <ClipboardList size={18} strokeWidth={1.75} aria-hidden />,
-  Profile: <IdCard size={18} strokeWidth={1.75} aria-hidden />,
-  Route: <Route size={18} strokeWidth={1.75} aria-hidden />,
-  Manifest: <ClipboardList size={18} strokeWidth={1.75} aria-hidden />,
-  Done: <Check size={18} strokeWidth={1.75} aria-hidden />,
-};
-
 
 function tabToHref(tab: string, _first: string): string {
   const map: Record<string, string> = {
@@ -201,7 +168,7 @@ export function AppShell({
             items={shown.map((tab) => ({
               href: tabToHref(tab, first),
               label: tab,
-              icon: ICONS[tab] ?? (
+              icon: TOP_LEVEL_ICONS[tab] ?? (
                 <LayoutDashboard size={18} strokeWidth={1.75} aria-hidden />
               ),
               children: NAV_CHILDREN[tab]?.map((c) => ({

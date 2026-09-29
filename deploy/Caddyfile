@@ -36,11 +36,18 @@
 # Every provisioned school subdomain. Wildcard DNS -> this server; the API
 # resolves the tenant per request.
 *.mandela.school {
+	header {
+		-X-Mandela-Host
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
 	reverse_proxy web:3000
 }
 
 # Landing + platform root
 mandela.school {
+	header -X-Mandela-Host
 	reverse_proxy web:3000
 }
 
@@ -48,5 +55,5 @@ mandela.school {
 # Also exposed directly for staff/mobile clients that pin the API host
 # (push, offline sync, future native shells).
 api.mandela.school {
-	reverse_proxy api:4000
+	respond "Not found" 404
 }

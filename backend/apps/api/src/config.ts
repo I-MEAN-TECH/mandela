@@ -79,6 +79,7 @@ const envSchema = z.object({
   SCHOOL_HOST_ROOT: z.string().default("mandela.school"),
   // Web module: session signing secret + fallback tenant when host has no subdomain.
   WEB_SESSION_SECRET: z.string().default("mandela_dev_web_secret_change_me"),
+  CONTROL_PLANE_TOKEN: z.string().default("mandela_dev_control_plane_token_change_me"),
   /** Gates the public "claim my new school" call — issued by the setup flow. */
   PROVISION_TOKEN: z.string().default("mandela_dev_provision_token"),
   WEB_DEFAULT_TENANT: z.string().default("demo"),
@@ -101,6 +102,18 @@ const envSchema = z.object({
 });
 
 const parsed = envSchema.parse(process.env);
+
+if (parsed.NODE_ENV === "production") {
+  const unsafe = [
+    ["WEB_SESSION_SECRET", parsed.WEB_SESSION_SECRET, "mandela_dev_web_secret_change_me"],
+    ["CONTROL_PLANE_TOKEN", parsed.CONTROL_PLANE_TOKEN, "mandela_dev_control_plane_token_change_me"],
+    ["PROVISION_TOKEN", parsed.PROVISION_TOKEN, "mandela_dev_provision_token"],
+  ].filter(([, value, development]) => value === development || String(value).length < 32).map(([name]) => name);
+  if (unsafe.length) throw new Error(`production secrets missing or unsafe: ${unsafe.join(", ")}`);
+  if (!parsed.VAULT_MASTER_KEY || parsed.VAULT_MASTER_KEY.length < 32) throw new Error("production VAULT_MASTER_KEY must be set and at least 32 characters");
+  if (!parsed.DARAJA_VALIDATION_TOKEN || !parsed.DARAJA_SHORTCODE) throw new Error("production Daraja validation token and shortcode must be set");
+  if (parsed.WHATSAPP_PROVIDER !== "meta" || !parsed.WHATSAPP_TOKEN || !parsed.WHATSAPP_PHONE_NUMBER_ID) throw new Error("production WhatsApp Meta credentials must be configured");
+}
 
 /** PORT="" (or 0) in the ambient env must not hijack the default. */
 const rawPort = Number(process.env.PORT);

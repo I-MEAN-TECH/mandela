@@ -1,0 +1,35 @@
+# Progress
+
+- 2026-09-29: Started read-only system audit.
+- 2026-09-29: Architecture and auth review found unprotected provisioning APIs and unsafe guardian/session authentication paths. Continuing with executable verification and deployment review.
+- 2026-09-29: Dependency audit found 52 known production vulnerabilities, including critical Next.js RCE advisories. Typecheck and limited RLS test ran; RLS assertions passed but coverage is narrow.
+- 2026-09-29: Fresh uncached typechecks passed. A full production build did not produce build artifacts within the audit window and was stopped; it emitted Next.js workspace-root warnings first. Audit report ready.
+- 2026-09-29: User approved implementation. Design: `docs/superpowers/specs/2026-09-29-release-hardening-design.md`; plan: `docs/superpowers/plans/2026-09-29-release-hardening.md`.
+- 2026-09-29: Tenant-bound 12-hour signed sessions and a cross-tenant/expiry regression test added. Guardian phone-only login is disabled; the login UI uses the OTP route. Provisioning reads/writes require a timing-safe control-plane token; public API host is closed at Caddy. Verification continues.
+- 2026-09-29: Release-hardening checks passed: production build, sequential typecheck, RLS assertions, security regression tests, Docker Compose configuration, and `pnpm audit --prod` (zero known vulnerabilities). Dependency floor is Next 15.5.24 and Nest 11.1.18. OTP values are now keyed/salted hashes; registration cookies use the 12-hour secure production policy.
+- 2026-09-29: Honesty note: sessions are signed and tenant-bound but not server-revocable, and production OTP dispatch has not been implemented. These are explicit remaining release work, not hidden as complete.
+- 2026-09-29: Added `docs/ARCHITECTURE-MAP.md`: current system and deployment Mermaid diagrams derived from runtime configuration and source boundaries.
+- 2026-09-29: Started dashboard/module rationalisation. Scope includes role-specific dashboard usefulness, duplicate route removal, icon system, and missing workflow identification. Research and design approval precede implementation.
+- 2026-09-29: Research established task-first, role-scoped dashboards as the target. Exa rate-limited after one result set; findings saved before repository mapping.
+- 2026-09-29: Dashboard rationalisation design written at `docs/superpowers/specs/2026-09-29-dashboard-rationalisation-design.md`. It defines canonical workflow owners, role navigation, dashboard hierarchy, icon registry, delivery phases, and acceptance criteria. Placeholder scan passed.
+- 2026-09-29: Design expanded: every role dashboard now requires role-specific KPI cards, a decision trend, and an operational chart, with RLS-scoped data, accessible labels, and empty states.
+- 2026-09-29: Detailed implementation plan written at `docs/superpowers/plans/2026-09-29-dashboard-rationalisation.md`. Execution starts with canonical navigation and icon coverage before dashboard data changes.
+- 2026-09-29: Task 1 started TDD. Initial navigation contract failed: 64 child entries had no explicit icon and 14 routes had duplicate owners. Canonical child navigation now has one owner per route and a required icon registry. `pnpm --filter @mandela/web test:navigation` and web typecheck pass.
+- 2026-09-29: Navigation contract test added before implementation. First run failed because the web workspace has no local `tsx` executable; reusing the API workspace's existing `tsx` avoids a new dependency.
+- 2026-09-29: Began public-site/product-handoff discovery. Confirmed a central app-origin link boundary and a sound three-door `/start` router. Found two release-facing truth gaps: the hero parent OTP form claims delivery that production does not provide, and contact endpoints are placeholders. Agent Reach doctor/search was attempted for external conversion research but returned no result before its 30-second command window; do not repeat the same command unchanged.
+- 2026-09-29: User visual review found a real sidebar defect: counter-role `Visitors` and `Inquiries` fell through to the generic dashboard icon, matching `Today`. Root cause is an incomplete first-level icon registry in `AppShell`; expanding it into the navigation registry with a regression contract is in progress.
+- 2026-09-29: First icon-contract run failed with `ReferenceError: LayoutDashboard is not defined`. The registry moved icon ownership from `AppShell` but did not yet import all four newly owned glyphs; corrected before retry.
+- 2026-09-29: Second icon-contract run surfaced the remaining moved imports (`Store`, then `Sparkles`). Added them to the registry boundary before a final run; this is one root-cause class, not a product failure.
+- 2026-09-29: Browser login validation started in an isolated session. PowerShell interpreted unquoted agent-browser `@eN` element references as syntax, so the password fill/click did not execute and the wait timed out. Retry with quoted refs rather than repeating the command.
+- 2026-09-29: Sidebar icon registry completed and verified. `pnpm --filter @mandela/web test:navigation` confirms every supported role tab has an explicit, non-reused top-level glyph; web typecheck and diff whitespace check are green. Live counter login confirms distinct rendered icons for Today (dashboard), Visitors (contact card), and Inquiries (question bubble). Screenshot: `.planning/2026-09-29-system-audit/counter-icons.png`.
+- 2026-09-29: Pre-push API/web typechecks and navigation contract passed. The security test was invoked with the wrong script name (`test:security`); package declares `security:test`, so the next gate uses that command rather than repeating the failure.
+- 2026-09-29: Expanded the navigation contract to require unique child-module glyphs. Red run correctly found eight duplicate child icons (invoices, sections, duty rosters, users, health, attendance roster, class learners, homework); semantic replacements are applied for the green run.
+- 2026-09-29: Pre-push review found two release blockers: web navigation tests called Windows-only `tsx.cmd`, and production Compose omitted integration values now required by the production configuration guard. The test is made workspace-local and cross-platform; Compose now requires Daraja and Meta WhatsApp values explicitly.
+- 2026-09-29: The first cross-platform script run failed because `pnpm install --lockfile-only` updates resolution only and does not create the newly declared web `tsx` executable link. Run a normal workspace install before retrying; do not change the script back to a Windows path.
+- 2026-09-29: Green verification after the install: the cross-platform navigation contract confirms unique icons across all 41 canonical child modules and all role tabs; web typecheck is green; production Compose accepts a complete required-variable configuration; whitespace diff check is clean.
+
+## Errors Encountered
+
+| Error | Attempt | Resolution |
+|---|---:|---|
+| Patch context did not match DEV-PHASES heading | 1 | Created the design document separately; defer the phase-document edit until exact context is read. |

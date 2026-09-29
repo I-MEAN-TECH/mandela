@@ -7,6 +7,7 @@ import { startEmbeddedPostgres, stopEmbeddedPostgres } from "./embedded-postgres
 import { closeAllPools, getControlPool } from "./db/pool.js";
 import { startTalkWorker, stopTalkWorker } from "./talk/worker.js";
 import { startRollupWorker, stopRollupWorker } from "./web/rollupWorker.js";
+import type { NextFunction, Request, Response } from "express";
 
 async function bootstrap() {
   if (useEmbeddedPostgres) {
@@ -16,6 +17,14 @@ async function bootstrap() {
   await getControlPool();
 
   const app = await NestFactory.create(AppModule, { logger: ["log", "error", "warn"] });
+  app.use((_req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    if (config.NODE_ENV === "production") res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    next();
+  });
   app.enableCors({
     origin: config.WEB_ORIGIN.split(",").map((s) => s.trim()),
     credentials: true,

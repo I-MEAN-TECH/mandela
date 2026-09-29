@@ -8,6 +8,12 @@ import { NextRequest, NextResponse } from "next/server";
 const API_URL = process.env.MANDELA_API_URL ?? "http://localhost:4000";
 const COOKIE = "mandela_session";
 
+function hostToTenant(host: string | null): string | undefined {
+  if (!host) return undefined;
+  const sub = host.split(":")[0]!.split(".")[0]!;
+  return sub && sub !== "localhost" && sub !== "www" && !/^\d+\.\d+\.\d+\.\d+$/.test(sub) ? sub : undefined;
+}
+
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as {
     action?: "request" | "verify";
@@ -24,9 +30,12 @@ export async function POST(req: NextRequest) {
   const endpoint =
     body.action === "verify" ? "/web/auth/verify-code" : "/web/auth/request-code";
 
+  const headers = new Headers({ "content-type": "application/json" });
+  const tenant = req.cookies.get("mandela_tenant")?.value ?? hostToTenant(req.headers.get("host"));
+  if (tenant) headers.set("x-mandela-host", `${tenant}.mandela.school`);
   const r = await fetch(`${API_URL}${endpoint}`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify({ identifier, purpose, code: body.code ?? "" }),
     cache: "no-store",
   });
@@ -34,20 +43,15 @@ export async function POST(req: NextRequest) {
     ok?: boolean;
     error?: string;
     devCode?: string;
-    token?: string;
   };
 
   if (body.action === "verify") {
-    if (!data.ok && !data.token) {
+    const sessionCookie = r.headers.get("set-cookie");
+    if (!data.ok || !sessionCookie) {
       return NextResponse.json({ ok: false, error: "That code did not match — request a fresh one." }, { status: 401 });
     }
     const res = NextResponse.json({ ok: true });
-    res.cookies.set(COOKIE, data.token ?? "", {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 3600,
-    });
+    res.headers.append("set-cookie", sessionCookie);
     return res;
   }
 

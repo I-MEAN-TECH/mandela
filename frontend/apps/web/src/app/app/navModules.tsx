@@ -7,6 +7,11 @@ import {
   HeartPulse, ShieldQuestion, ScrollText, UserPlus, IdCard, HandCoins, BarChart3,
   CalendarRange, CalendarCheck, BookOpen, ClipboardPen, Puzzle, ChartLine,
   UsersRound, Plug, History, Import, Inbox, School,
+  CreditCard, MessageSquare, MessageCircleQuestionMark, ContactRound, Map,
+  ListChecks, DoorOpen, Shirt, MapPinned, BookOpenCheck, Clock3, Flag, Medal,
+  NotebookPen, ChartNoAxesColumnIncreasing,
+  LayoutDashboard, Settings, Route, Check, Store, Sparkles,
+  ReceiptText, CalendarClock, UserCog, Activity, UserRoundCheck,
 } from "lucide-react";
 
 /**
@@ -22,11 +27,64 @@ import {
 export interface NavChild {
   label: string;
   href: string; // "#anchor" for in-page sections, "/app/..." for routes
-  /** Real glyph for the sidebar child row (falls back to a dot). */
-  icon?: ReactNode;
+  /** Every visible entry has an explicit glyph. */
+  icon: ReactNode;
 }
 
-export const NAV_CHILDREN: Record<string, NavChild[]> = {
+/**
+ * First-level navigation is role-dependent, but every workflow still gets a
+ * semantic, explicit glyph. A missing entry is a regression: AppShell keeps a
+ * visual fallback only for malformed tenant configuration, never for known UI.
+ */
+export const TOP_LEVEL_ICONS: Record<string, ReactNode> = {
+  Today: <LayoutDashboard size={18} strokeWidth={1.75} aria-hidden />,
+  Money: <Landmark size={18} strokeWidth={1.75} aria-hidden />,
+  Spend: <HandCoins size={18} strokeWidth={1.75} aria-hidden />,
+  Care: <HeartPulse size={18} strokeWidth={1.75} aria-hidden />,
+  Store: <Store size={18} strokeWidth={1.75} aria-hidden />,
+  Academics: <GraduationCap size={18} strokeWidth={1.75} aria-hidden />,
+  Operations: <CalendarCheck size={18} strokeWidth={1.75} aria-hidden />,
+  People: <Users size={18} strokeWidth={1.75} aria-hidden />,
+  Insights: <ChartLine size={18} strokeWidth={1.75} aria-hidden />,
+  Settings: <Puzzle size={18} strokeWidth={1.75} aria-hidden />,
+  Collect: <Banknote size={18} strokeWidth={1.75} aria-hidden />,
+  Approve: <ClipboardCheck size={18} strokeWidth={1.75} aria-hidden />,
+  Reports: <FileText size={18} strokeWidth={1.75} aria-hidden />,
+  Reconcile: <ArrowLeftRight size={18} strokeWidth={1.75} aria-hidden />,
+  Pay: <CreditCard size={18} strokeWidth={1.75} aria-hidden />,
+  Mark: <ClipboardPen size={18} strokeWidth={1.75} aria-hidden />,
+  Class: <School size={18} strokeWidth={1.75} aria-hidden />,
+  Directory: <IdCard size={18} strokeWidth={1.75} aria-hidden />,
+  Levies: <Receipt size={18} strokeWidth={1.75} aria-hidden />,
+  Broadcast: <Sparkles size={18} strokeWidth={1.75} aria-hidden />,
+  Messages: <MessageSquare size={18} strokeWidth={1.75} aria-hidden />,
+  Homework: <ClipboardList size={18} strokeWidth={1.75} aria-hidden />,
+  Profile: <UserRound size={18} strokeWidth={1.75} aria-hidden />,
+  Route: <Route size={18} strokeWidth={1.75} aria-hidden />,
+  Manifest: <Map size={18} strokeWidth={1.75} aria-hidden />,
+  Done: <Check size={18} strokeWidth={1.75} aria-hidden />,
+  Visitors: <ContactRound size={18} strokeWidth={1.75} aria-hidden />,
+  Inquiries: <MessageCircleQuestionMark size={18} strokeWidth={1.75} aria-hidden />,
+  Calendar: <CalendarDays size={18} strokeWidth={1.75} aria-hidden />,
+  Rollcall: <ListChecks size={18} strokeWidth={1.75} aria-hidden />,
+  Exeats: <DoorOpen size={18} strokeWidth={1.75} aria-hidden />,
+  Laundry: <Shirt size={18} strokeWidth={1.75} aria-hidden />,
+  "My dorm": <BedDouble size={18} strokeWidth={1.75} aria-hidden />,
+  Repairs: <Wrench size={18} strokeWidth={1.75} aria-hidden />,
+  Supplies: <Package size={18} strokeWidth={1.75} aria-hidden />,
+  "My zones": <MapPinned size={18} strokeWidth={1.75} aria-hidden />,
+  "Issue/Return": <BookOpenCheck size={18} strokeWidth={1.75} aria-hidden />,
+  Catalogue: <Library size={18} strokeWidth={1.75} aria-hidden />,
+  Overdue: <Clock3 size={18} strokeWidth={1.75} aria-hidden />,
+  Sections: <Flag size={18} strokeWidth={1.75} aria-hidden />,
+  Points: <Medal size={18} strokeWidth={1.75} aria-hidden />,
+  Events: <CalendarRange size={18} strokeWidth={1.75} aria-hidden />,
+  Department: <Building2 size={18} strokeWidth={1.75} aria-hidden />,
+  Marks: <NotebookPen size={18} strokeWidth={1.75} aria-hidden />,
+  Coverage: <ChartNoAxesColumnIncreasing size={18} strokeWidth={1.75} aria-hidden />,
+};
+
+const NAV_CHILDREN_RAW: Record<string, Omit<NavChild, "icon">[]> = {
   Money: [
     { label: "Collect Cashier", href: "/app/money" },
     { label: "Fee Structures", href: "/app/money/fees" },
@@ -34,21 +92,10 @@ export const NAV_CHILDREN: Record<string, NavChild[]> = {
     { label: "Invoices & Statements", href: "/app/money/invoices" },
     { label: "Fee Reports", href: "/app/reports" },
   ],
-  Collect: [
-    { label: "Record Payment", href: "/app/money" },
-    { label: "Invoices & Statements", href: "/app/money/invoices" },
-  ],
-  Reconcile: [
-    { label: "Pending Confirmations", href: "/app/reconcile" },
-  ],
-  Reports: [
-    { label: "Collection Reports", href: "/app/reports" },
-  ],
   Spend: [
     { label: "Payroll", href: "/app/people/payroll" },
     { label: "Petty Cash & Budgets", href: "/app/money/petty" },
     { label: "Purchases & Suppliers", href: "/app/money/purchases" },
-    { label: "Store & Kit", href: "/app/operations/store" },
   ],
   People: [
     { label: "Admissions", href: "/app/people/admissions" },
@@ -99,55 +146,17 @@ export const NAV_CHILDREN: Record<string, NavChild[]> = {
   Homework: [
     { label: "Homework List", href: "/app/homework" },
   ],
-  Levies: [
-    { label: "Fee & Levy Schedule", href: "/app/levies" },
-    { label: "Fee Structures", href: "/app/money/fees" },
-  ],
-  Hostel: [
-    { label: "Dorm Allocations", href: "/app/operations/hostel" },
-    { label: "Laundry Custody", href: "/app/laundry" },
-  ],
-  Laundry: [
-    { label: "Garment Handover", href: "/app/laundry" },
-  ],
-  Facilities: [
-    { label: "Repairs Queue", href: "/app/operations/facilities" },
-    { label: "Store Supplies", href: "/app/operations/store" },
-  ],
-  Store: [
-    { label: "Store Inventory", href: "/app/operations/store" },
-  ],
-  Library: [
-    { label: "Book Catalogue", href: "/app/operations/library" },
-  ],
-  Transport: [
-    { label: "Route & Manifest", href: "/app/operations/transport" },
-  ],
-  Visitors: [
-    { label: "Visitors & Passes", href: "/app/operations/security" },
-  ],
-  Inquiries: [
-    { label: "Admissions Funnel", href: "/app/people/admissions" },
-  ],
-  Sections: [
-    { label: "Sections & Patrons", href: "/app/operations/sections" },
-    { label: "Houses & Points", href: "/app/operations/houses" },
-  ],
-  Exams: [
-    { label: "Exam Entries & Report Cards", href: "/app/academics/exams" },
-  ],
-  Directory: [
-    { label: "Staff Directory", href: "/app/directory" },
-    { label: "Learners List", href: "/app/people/learners" },
-  ],
 };
 
 /** Sub-module icons — real glyphs (lucide), one per child row. */
 export const CHILD_ICONS: Record<string, ReactNode> = {
+  "Collect Cashier": <Landmark size={13} strokeWidth={2} aria-hidden />,
+  "Fee Structures": <ClipboardList size={13} strokeWidth={2} aria-hidden />,
+  Levies: <Receipt size={13} strokeWidth={2} aria-hidden />,
   Collect: <Landmark size={13} strokeWidth={2} aria-hidden />,
   "Confirm & Rails": <ArrowLeftRight size={13} strokeWidth={2} aria-hidden />,
   "Fees, Levies & Pocket": <ClipboardList size={13} strokeWidth={2} aria-hidden />,
-  "Invoices & Statements": <Receipt size={13} strokeWidth={2} aria-hidden />,
+  "Invoices & Statements": <ReceiptText size={13} strokeWidth={2} aria-hidden />,
   "Fee Reports": <FileText size={13} strokeWidth={2} aria-hidden />,
   "Record Payment": <Landmark size={13} strokeWidth={2} aria-hidden />,
   "Fees & Levies": <ClipboardList size={13} strokeWidth={2} aria-hidden />,
@@ -168,9 +177,9 @@ export const CHILD_ICONS: Record<string, ReactNode> = {
   "Attendance Oversight": <CalendarCheck size={13} strokeWidth={2} aria-hidden />,
   "Exams, Entries & Report Cards": <GraduationCap size={13} strokeWidth={2} aria-hidden />,
   Library: <Library size={13} strokeWidth={2} aria-hidden />,
-  "Sections & Patrons": <UsersRound size={13} strokeWidth={2} aria-hidden />,
+  "Sections & Patrons": <Flag size={13} strokeWidth={2} aria-hidden />,
   "Events & Calendar": <CalendarDays size={13} strokeWidth={2} aria-hidden />,
-  "Duty Rosters": <CalendarCheck size={13} strokeWidth={2} aria-hidden />,
+  "Duty Rosters": <CalendarClock size={13} strokeWidth={2} aria-hidden />,
   "Facilities & Repairs": <Wrench size={13} strokeWidth={2} aria-hidden />,
   Transport: <Bus size={13} strokeWidth={2} aria-hidden />,
   "Hostel & Mess": <BedDouble size={13} strokeWidth={2} aria-hidden />,
@@ -183,12 +192,13 @@ export const CHILD_ICONS: Record<string, ReactNode> = {
   "Audit & Switching": <History size={13} strokeWidth={2} aria-hidden />,
   "Report Builder": <ChartLine size={13} strokeWidth={2} aria-hidden />,
   "School Profile & Terms": <School size={13} strokeWidth={2} aria-hidden />,
-  "Users & Duties": <UsersRound size={13} strokeWidth={2} aria-hidden />,
+  "Users & Duties": <UserCog size={13} strokeWidth={2} aria-hidden />,
+  "School Health": <Activity size={13} strokeWidth={2} aria-hidden />,
   "Board & BOM": <Building2 size={13} strokeWidth={2} aria-hidden />,
   "Flags & Integrations": <Puzzle size={13} strokeWidth={2} aria-hidden />,
-  "Attendance Roster": <CalendarCheck size={13} strokeWidth={2} aria-hidden />,
-  "My Class Learners": <Users size={13} strokeWidth={2} aria-hidden />,
-  "Homework List": <ClipboardList size={13} strokeWidth={2} aria-hidden />,
+  "Attendance Roster": <ClipboardCheck size={13} strokeWidth={2} aria-hidden />,
+  "My Class Learners": <UserRoundCheck size={13} strokeWidth={2} aria-hidden />,
+  "Homework List": <NotebookPen size={13} strokeWidth={2} aria-hidden />,
   "Dorm Allocations": <BedDouble size={13} strokeWidth={2} aria-hidden />,
   "Laundry Custody": <Package size={13} strokeWidth={2} aria-hidden />,
   "Garment Handover": <Package size={13} strokeWidth={2} aria-hidden />,
@@ -207,7 +217,6 @@ export const CHILD_ICONS: Record<string, ReactNode> = {
   Confirm: <ArrowLeftRight size={13} strokeWidth={2} aria-hidden />,
   "Money Rails": <Banknote size={13} strokeWidth={2} aria-hidden />,
   "Pocket Money": <Wallet size={13} strokeWidth={2} aria-hidden />,
-  Levies: <Receipt size={13} strokeWidth={2} aria-hidden />,
   "Exam Entries": <ClipboardCheck size={13} strokeWidth={2} aria-hidden />,
   Mess: <UtensilsCrossed size={13} strokeWidth={2} aria-hidden />,
   "Security Desk": <ShieldCheck size={13} strokeWidth={2} aria-hidden />,
@@ -219,3 +228,15 @@ export const CHILD_ICONS: Record<string, ReactNode> = {
   "Switching Import": <Import size={13} strokeWidth={2} aria-hidden />,
   "Inbox (Approvals & Tasks)": <Inbox size={13} strokeWidth={2} aria-hidden />,
 };
+
+/** One registry decorates every canonical child with its required icon. */
+export const NAV_CHILDREN: Record<string, NavChild[]> = Object.fromEntries(
+  Object.entries(NAV_CHILDREN_RAW).map(([parent, children]) => [
+    parent,
+    children.map((child) => {
+      const icon = CHILD_ICONS[child.label];
+      if (!icon) throw new Error(`Missing navigation icon for ${parent} / ${child.label}`);
+      return { ...child, icon };
+    }),
+  ]),
+);

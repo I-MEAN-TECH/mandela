@@ -41,22 +41,16 @@ export async function POST(req: NextRequest) {
     cache: "no-store",
   });
   const data = (await r.json()) as {
-    ok: boolean; error?: string; token?: string; staff?: { needsPassword?: boolean };
+    ok: boolean; error?: string; staff?: { needsPassword?: boolean };
   };
 
-  if (!data.ok || !data.token) {
+  const sessionCookie = r.headers.get("set-cookie");
+  if (!data.ok || !sessionCookie) {
     return NextResponse.json({ ok: false, error: data.error ?? "Sign-in failed" }, { status: 401 });
   }
 
-  // needsPassword = the account still has no password (legacy dev path).
-  // The UI nudges the desk to set one; auth itself has succeeded.
   const res = NextResponse.json({ ok: true, needsPassword: data.staff?.needsPassword ?? false });
-  res.cookies.set(COOKIE, data.token, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 30 * 24 * 3600,
-  });
+  res.headers.append("set-cookie", sessionCookie);
   return res;
 }
 

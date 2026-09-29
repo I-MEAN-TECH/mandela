@@ -50,6 +50,8 @@ function parseInput<T>(schema: z.ZodType<T>, body: unknown): T {
   return result.data;
 }
 
+type TenantRequest = Request & { mandelaTenant?: { dbName: string; slug: string } };
+
 function tenantFromReq(req: Request): Promise<{ dbName: string; slug: string }> {
   return (async () => {
     // The Next.js server forwards the original school host via x-mandela-host.
@@ -58,12 +60,14 @@ function tenantFromReq(req: Request): Promise<{ dbName: string; slug: string }> 
     if (!t) {
       throw new Error("no tenant resolved — provision a school or set WEB_DEFAULT_TENANT");
     }
+    (req as TenantRequest).mandelaTenant = t;
     return t;
   })();
 }
 
 function principalFromReq(req: Request): web.Principal | null {
-  return web.verifyToken(parseCookies(req)[SESSION_COOKIE]);
+  const tenant = (req as TenantRequest).mandelaTenant;
+  return tenant ? web.verifyToken(parseCookies(req)[SESSION_COOKIE], tenant.slug) : null;
 }
 
 // Tiny cookie parse/serialize (avoids a dependency; better-auth replaces later)
@@ -99,7 +103,7 @@ export class WebController {
     if (await web.loginThrottleBlocked(tenant.dbName, throttleKey)) {
       return { ok: false as const, error: "Too many attempts - wait 15 minutes and try again." };
     }
-    const result = await web.resolveStaffLogin(tenant.dbName, input.email, input.password);
+    const result = await web.resolveStaffLogin(tenant.dbName, tenant.slug, input.email, input.password);
     if (!result) {
       await web.loginThrottleFail(tenant.dbName, throttleKey);
       return { ok: false as const, error: "Check the email and password - no match on the active staff roll." };
@@ -109,12 +113,11 @@ export class WebController {
     res.cookie(SESSION_COOKIE, result.token, {
       httpOnly: true,
       sameSite: "lax",
-      maxAge: 30 * 24 * 3600 * 1000,
+      secure: config.NODE_ENV === "production",
+      maxAge: web.SESSION_TTL_SECONDS * 1000,
       path: "/",
     });
-    // token is also returned so server-side consumers (Next.js server actions)
-    // can set their own cookie jar.
-    return { ok: true as const, staff: result.staff, token: result.token, needsPassword: result.needsPassword };
+    return { ok: true as const, staff: result.staff, needsPassword: result.needsPassword };
   }
 
   @Post("login/guardian")
@@ -123,17 +126,10 @@ export class WebController {
     const raw = parseInput(z.object({ phone: z.string().min(9).max(20) }), body).phone;
     const phone = normalizeKenyanPhone(raw);
     if (!phone) return { ok: false as const, error: "Enter a valid Kenyan phone number, e.g. 0733 000 001." };
-    const tenant = await tenantFromReq(req);
-    const result = await web.resolveGuardianLogin(tenant.dbName, phone);
-    if (!result) return { ok: false as const, error: "No guardian registered on that phone." };
-    const res = req.res!;
-    res.cookie(SESSION_COOKIE, result.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      maxAge: 30 * 24 * 3600 * 1000,
-      path: "/",
-    });
-    return { ok: true as const, guardian: result.guardian, token: result.token };
+    await tenantFromReq(req);
+    // A phone number is an identifier, not proof of identity. Guardian
+    // sessions are issued only by POST /web/auth/verify-code.
+    return { ok: false as const, error: "Enter the one-time code sent to this phone." };
   }
 
   @Post("logout")
@@ -2995,18 +2991,31 @@ export class WebController {
   @HttpCode(200)
   async requestCode(@Req() req: Request, @Body() body: unknown) {
     const input = parseInput(z.object({ identifier: z.string().min(3), purpose: z.enum(["staff", "guardian"]) }), body);
+    const identifier = input.purpose === "guardian" ? normalizeKenyanPhone(input.identifier) : input.identifier.trim().toLowerCase();
+    if (!identifier) return { ok: false as const, error: "Enter a valid Kenyan phone number." };
     const tenant = await tenantFromReq(req);
     const principal = principalFromReq(req);
     const staffPrincipal = principal && principal.kind === "staff" ? principal : null;
-    return web.requestLoginCode(tenant.dbName, staffPrincipal, input);
+    return web.requestLoginCode(tenant.dbName, staffPrincipal, { ...input, identifier });
   }
 
   @Post("auth/verify-code")
   @HttpCode(200)
   async verifyCode(@Req() req: Request, @Body() body: unknown) {
     const input = parseInput(z.object({ identifier: z.string().min(3), purpose: z.enum(["staff", "guardian"]), code: z.string().min(4) }), body);
+    const identifier = input.purpose === "guardian" ? normalizeKenyanPhone(input.identifier) : input.identifier.trim().toLowerCase();
+    if (!identifier) return { ok: false as const, error: "Enter a valid Kenyan phone number." };
     const tenant = await tenantFromReq(req);
-    return web.verifyLoginCode(tenant.dbName, input);
+    const result = await web.verifyLoginCode(tenant.dbName, tenant.slug, { ...input, identifier });
+    if (!result) return { ok: false as const, error: "That code did not match. Request a new code." };
+    req.res!.cookie(SESSION_COOKIE, result.token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: config.NODE_ENV === "production",
+      maxAge: web.SESSION_TTL_SECONDS * 1000,
+      path: "/",
+    });
+    return { ok: true as const };
   }
 
   // -- self-service payslips + onboarding + remarks ----------------------------
@@ -3114,7 +3123,7 @@ export class WebController {
     if (policyError) return { ok: false as const, error: policyError };
     const tenant = await tenantFromReq(req);
     const phone = input.phone ? normalizeKenyanPhone(input.phone) ?? input.phone : null;
-    const result = await web.registerSchoolAdmin(tenant.dbName, {
+    const result = await web.registerSchoolAdmin(tenant.dbName, tenant.slug, {
       fullName: input.fullName,
       schoolName: input.schoolName,
       email: input.email,
@@ -3125,7 +3134,8 @@ export class WebController {
     if (!result.ok) return result;
     const res = req.res!;
     res.cookie(SESSION_COOKIE, result.token, {
-      httpOnly: true, sameSite: "lax", maxAge: 30 * 24 * 3600 * 1000, path: "/",
+      httpOnly: true, sameSite: "lax", secure: config.NODE_ENV === "production",
+      maxAge: web.SESSION_TTL_SECONDS * 1000, path: "/",
     });
     return { ok: true as const, joinCode: result.joinCode, role: "admin" };
   }
@@ -3175,7 +3185,8 @@ export class WebController {
     if (!result.ok) return result;
     const res = req.res!;
     res.cookie(SESSION_COOKIE, result.token, {
-      httpOnly: true, sameSite: "lax", maxAge: 30 * 24 * 3600 * 1000, path: "/",
+      httpOnly: true, sameSite: "lax", secure: config.NODE_ENV === "production",
+      maxAge: web.SESSION_TTL_SECONDS * 1000, path: "/",
     });
     return { ok: true as const, role: result.role };
   }

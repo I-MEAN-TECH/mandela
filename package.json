@@ -24,6 +24,13 @@
     "typescript": "^5.7.0"
   },
   "pnpm": {
+    "overrides": {
+      "body-parser": "1.20.6",
+      "file-type": "21.3.2",
+      "multer": "2.4.0",
+      "postcss": "8.5.23",
+      "qs": "6.16.0"
+    },
     "onlyBuiltDependencies": [
       "@embedded-postgres/windows-x64",
       "@nestjs/core",

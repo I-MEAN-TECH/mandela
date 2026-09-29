@@ -57,13 +57,17 @@ export async function resolveTenant(
 }
 
 // ---------------------------------------------------------------------------
-// Sessions: stateless HMAC tokens (better-auth replaces this in v2)
-// token = base64url(principal json).base64url(hmac-sha256(principal))
+// Sessions: signed, tenant-bound claims. The tenant check prevents a session
+// issued by school A from ever becoming a principal in school B, even when a
+// request reaches the API directly with a forged host header.
 // ---------------------------------------------------------------------------
 
 export type Principal =
   | { kind: "staff"; userId: string; role: string }
   | { kind: "guardian"; guardianId: string };
+
+type SessionClaims = Principal & { tenant: string; exp: number };
+export const SESSION_TTL_SECONDS = 12 * 60 * 60;
 
 function b64url(s: Buffer | string): string {
   return Buffer.from(s).toString("base64url");
@@ -73,12 +77,12 @@ function sign(payload: string): string {
   return crypto.createHmac("sha256", config.WEB_SESSION_SECRET).update(payload).digest("base64url");
 }
 
-export function issueToken(principal: Principal): string {
-  const payload = b64url(JSON.stringify(principal));
+export function issueToken(principal: Principal, tenant: string, now = Date.now()): string {
+  const payload = b64url(JSON.stringify({ ...principal, tenant, exp: Math.floor(now / 1000) + SESSION_TTL_SECONDS }));
   return `${payload}.${sign(payload)}`;
 }
 
-export function verifyToken(token: string | undefined | null): Principal | null {
+export function verifyToken(token: string | undefined | null, tenant: string, now = Date.now()): Principal | null {
   if (!token) return null;
   const [payload, sig] = token.split(".");
   if (!payload || !sig) return null;
@@ -87,9 +91,10 @@ export function verifyToken(token: string | undefined | null): Principal | null 
   const b = Buffer.from(expected);
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
   try {
-    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as Principal;
-    if (parsed.kind === "staff" && parsed.userId && parsed.role) return parsed;
-    if (parsed.kind === "guardian" && parsed.guardianId) return parsed;
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as SessionClaims;
+    if (parsed.tenant !== tenant || !Number.isInteger(parsed.exp) || parsed.exp <= Math.floor(now / 1000)) return null;
+    if (parsed.kind === "staff" && parsed.userId && parsed.role) return { kind: "staff", userId: parsed.userId, role: parsed.role };
+    if (parsed.kind === "guardian" && parsed.guardianId) return { kind: "guardian", guardianId: parsed.guardianId };
     return null;
   } catch {
     return null;
@@ -277,6 +282,7 @@ export async function getBootstrap(dbName: string): Promise<Bootstrap> {
 
 export async function resolveStaffLogin(
   dbName: string,
+  tenant: string,
   email: string,
   password?: string,
 ): Promise<{ token: string; staff: { id: string; full_name: string; role: string }; needsPassword: boolean } | null> {
@@ -304,7 +310,7 @@ export async function resolveStaffLogin(
   // No hash and no password = the legacy dev path (email match only).
   // Production flips this off by seeding every staff a password.
   return {
-    token: issueToken({ kind: "staff", userId: staff.id, role: staff.role }),
+    token: issueToken({ kind: "staff", userId: staff.id, role: staff.role }, tenant),
     staff: { id: staff.id, full_name: staff.full_name, role: staff.role },
     needsPassword: staff.login_hash === null,
   };
@@ -473,7 +479,7 @@ export async function darajaC2BCallback(
   return { ok: true, matched: match.learnerId !== null, reason: match.reason };
 }
 
-export async function resolveGuardianLogin(dbName: string, phone: string): Promise<{ token: string; guardian: { id: string; full_name: string } } | null> {
+export async function resolveGuardianLogin(dbName: string, tenant: string, phone: string): Promise<{ token: string; guardian: { id: string; full_name: string } } | null> {
   const db = getSchoolPool(dbName);
   // SECURITY DEFINER helper (migration 007) — same pre-session reasoning.
   const r = await db.query<{ id: string; full_name: string }>(
@@ -482,7 +488,7 @@ export async function resolveGuardianLogin(dbName: string, phone: string): Promi
   );
   if (!r.rowCount) return null;
   const g = r.rows[0]!;
-  return { token: issueToken({ kind: "guardian", guardianId: g.id }), guardian: g };
+  return { token: issueToken({ kind: "guardian", guardianId: g.id }, tenant), guardian: g };
 }
 
 // ---------------------------------------------------------------------------
@@ -9027,6 +9033,22 @@ export async function confirmMyPayslip(
 // --------------------------------------------------------- 9 OTP LOGIN CODES
 const OTP_RESEND_SECONDS = 45;
 
+/** Store a keyed, salted verifier so a database read cannot replay an OTP. */
+export function hashLoginCode(code: string, salt = crypto.randomBytes(16).toString("hex")): string {
+  const digest = crypto
+    .createHmac("sha256", config.WEB_SESSION_SECRET)
+    .update(`${salt}:${code}`)
+    .digest("hex");
+  return `${salt}:${digest}`;
+}
+
+export function verifyLoginCodeHash(stored: string, candidate: string): boolean {
+  const [salt, expected] = stored.split(":");
+  if (!salt || !expected || !/^[a-f0-9]{64}$/i.test(expected)) return false;
+  const actual = hashLoginCode(candidate, salt).split(":")[1]!;
+  return crypto.timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(actual, "hex"));
+}
+
 export async function requestLoginCode(
   dbName: string,
   principal: Extract<Principal, { kind: "staff" }> | null,
@@ -9040,10 +9062,10 @@ export async function requestLoginCode(
     [identifier, input.purpose],
   );
   if (recent.rowCount) return { ok: true, sent: false };
-  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const code = String(crypto.randomInt(100000, 1_000_000));
   await db.query(
     `INSERT INTO login_code (identifier, purpose, code) VALUES ($1, $2, $3)`,
-    [identifier, input.purpose, code],
+    [identifier, input.purpose, hashLoginCode(code)],
   );
   // Delivery: queued into Talk for guardians with WhatsApp; staff codes are
   // emailed/sms'd by the platform worker when credentials land. In dev we
@@ -9054,6 +9076,7 @@ export async function requestLoginCode(
 
 export async function verifyLoginCode(
   dbName: string,
+  tenant: string,
   input: { identifier: string; purpose: "staff" | "guardian"; code: string },
 ): Promise<{ token: string; staff?: { id: string; full_name: string; role: string }; guardian?: { id: string; full_name: string } } | null> {
   const db = getSchoolPool(dbName);
@@ -9069,16 +9092,16 @@ export async function verifyLoginCode(
   if (lc.consumed_at) return null;
   if (new Date(lc.expires_at).getTime() < Date.now()) return null;
   if (lc.attempts >= 5) return null;
-  if (lc.code !== input.code) {
+  if (!verifyLoginCodeHash(lc.code, input.code)) {
     await db.query(`UPDATE login_code SET attempts = attempts + 1 WHERE id = $1`, [lc.id]);
     return null;
   }
   await db.query(`UPDATE login_code SET consumed_at = now() WHERE id = $1`, [lc.id]);
   if (input.purpose === "staff") {
-    const r = await resolveStaffLogin(dbName, identifier);
+    const r = await resolveStaffLogin(dbName, tenant, identifier);
     return r ? { token: r.token, staff: r.staff } : null;
   }
-  const g = await resolveGuardianLogin(dbName, identifier);
+  const g = await resolveGuardianLogin(dbName, tenant, identifier);
   return g ? { token: g.token, guardian: g.guardian } : null;
 }
 
@@ -9590,6 +9613,7 @@ export async function schoolByJoinCode(
  */
 export async function registerSchoolAdmin(
   dbName: string,
+  tenant: string,
   input: { fullName: string; schoolName: string; email: string; phone: string | null; password: string; alsoPrincipal: boolean },
 ): Promise<{ ok: true; token: string; staffId: string; joinCode: string } | { ok: false; error: string }> {
   const db = getSchoolPool(dbName);
@@ -9611,7 +9635,7 @@ export async function registerSchoolAdmin(
   );
   return {
     ok: true,
-    token: issueToken({ kind: "staff", userId: row.staff_id, role: "admin" }),
+    token: issueToken({ kind: "staff", userId: row.staff_id, role: "admin" }, tenant),
     staffId: row.staff_id,
     joinCode: row.join_code,
   };
@@ -9642,7 +9666,7 @@ export async function registerStaffByCode(
   if (!row || row.error || !row.staff_id) return { ok: false, error: row?.error ?? "Could not join the school" };
   return {
     ok: true,
-    token: issueToken({ kind: "staff", userId: row.staff_id, role: row.role! }),
+    token: issueToken({ kind: "staff", userId: row.staff_id, role: row.role! }, tenant.slug),
     staffId: row.staff_id,
     role: row.role!,
   };

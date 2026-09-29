@@ -1,6 +1,9 @@
-import { Body, Controller, Get, HttpCode, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Req, UnauthorizedException } from "@nestjs/common";
+import crypto from "node:crypto";
+import type { Request } from "express";
 import { provisionSchoolSchema, provisionSchool, type ProvisionSchoolInput } from "./provisioner.service.js";
 import { getControlPool } from "../db/pool.js";
+import { config } from "../config.js";
 
 /**
  * Provisioner REST surface (v0). Mirrors PROVISIONER.md section 1.
@@ -8,6 +11,13 @@ import { getControlPool } from "../db/pool.js";
  */
 @Controller("v1")
 export class ProvisionerController {
+  private requireControlToken(req: Request) {
+    const provided = req.headers["x-mandela-control-token"];
+    const candidate = typeof provided === "string" ? Buffer.from(provided) : Buffer.alloc(0);
+    const expected = Buffer.from(config.CONTROL_PLANE_TOKEN);
+    if (candidate.length !== expected.length || !crypto.timingSafeEqual(candidate, expected)) throw new UnauthorizedException("control-plane authentication required");
+  }
+
   @Get("health")
   @HttpCode(200)
   async health() {
@@ -20,7 +30,8 @@ export class ProvisionerController {
 
   @Post("schools")
   @HttpCode(202)
-  async createSchool(@Body() body: unknown) {
+  async createSchool(@Req() req: Request, @Body() body: unknown) {
+    this.requireControlToken(req);
     // Validate at the edge; service stays typed.
     const input: ProvisionSchoolInput = provisionSchoolSchema.parse(body);
     const result = await provisionSchool(input);
@@ -36,7 +47,8 @@ export class ProvisionerController {
   }
 
   @Get("schools/:id")
-  async getSchool(@Param("id") id: string) {
+  async getSchool(@Req() req: Request, @Param("id") id: string) {
+    this.requireControlToken(req);
     const pool = await getControlPool();
     const r = await pool.query(
       `SELECT id, slug, name, county, tier, state, db_name, caddy_host, plan,
@@ -49,7 +61,8 @@ export class ProvisionerController {
   }
 
   @Get("schools")
-  async listSchools() {
+  async listSchools(@Req() req: Request) {
+    this.requireControlToken(req);
     const pool = await getControlPool();
     const r = await pool.query(
       `SELECT id, slug, name, state, plan, learner_cap, onboarded_at
