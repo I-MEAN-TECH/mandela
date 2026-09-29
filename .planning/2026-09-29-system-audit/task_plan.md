@@ -7,11 +7,18 @@ Harden Mandela to a verified release floor: tenant-safe sessions, secure authent
 ## Phases
 
 ### Phase 5: Dashboard and module rationalisation
-**Status:** in_progress
+**Status:** complete
 
 Audit every role dashboard and navigation route, research school-operations
 dashboard patterns, remove duplicate modules, establish a concise module model,
 then propose a staged implementation design for approval.
+
+### Phase 7: Role navigation reliability audit
+**Status:** complete
+
+Verify visible navigation, destination routes, and runtime permission behavior
+for Counter and every role. Resolve the source-of-truth conflict, then present
+a minimal corrective design before implementation.
 
 ### Phase 1: Audit
 **Status:** complete
@@ -38,7 +45,7 @@ Fail closed in production, harden edge/runtime settings, upgrade dependencies, a
 
 ## Next Step
 
-Define the public-site-to-product handoff and content architecture, obtain design approval, then implement it as a separate scoped plan.
+Configure and verify a real production OTP delivery provider before enabling guardian production sign-in.
 
 ### Phase 6: Public website and product handoff
 **Status:** in_progress

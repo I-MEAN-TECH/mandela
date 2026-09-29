@@ -170,7 +170,7 @@ export interface Bootstrap {
  * can only ADD modules to a role's sidebar from Settings, never break the
  * defaults, because the defaults are the product floor.
  */
-const DEFAULT_NAV: Record<string, string[]> = {
+export const DEFAULT_NAV: Record<string, string[]> = {
   admin: ["Today", "Money", "Spend", "People", "Academics", "Operations", "Care", "Insights", "Settings"],
   bursar: ["Today", "Collect", "Reconcile", "Levies", "Reports"],
   driver: ["Today", "Transport"],
@@ -187,15 +187,12 @@ const DEFAULT_NAV: Record<string, string[]> = {
 
 /** perm_matrix module_key → the sidebar tab it unlocks (nav labels come from
  * NAV_CHILDREN mapping; a grant adds the tab if the role lacks it). */
-const MODULE_TAB: Record<string, string> = {
-  today: "Today",
-  money: "Money",
-  academics: "Academics",
-  operations: "Operations",
-  people: "People",
-  insights: "Insights",
-  settings: "Settings",
-};
+export type NavigationGrant = { role: string; module_key: string };
+
+/** Permission grants control data access, not sidebar visibility. */
+export function buildRoleNavigation(_grants: readonly NavigationGrant[]): Record<string, string[]> {
+  return Object.fromEntries(Object.entries(DEFAULT_NAV).map(([role, tabs]) => [role, [...tabs]]));
+}
 
 const DEFAULT_PRIME: Record<string, string> = {
   parent: "What do I owe, and what's happening today?",
@@ -226,16 +223,7 @@ export async function getBootstrap(dbName: string): Promise<Bootstrap> {
       `SELECT role::text AS role, module_key FROM perm_matrix WHERE sees`,
     )
     .catch(() => ({ rows: [] as { role: string; module_key: string }[] }));
-  const nav: Record<string, string[]> = {};
-  for (const [role, tabs] of Object.entries(DEFAULT_NAV)) {
-    const merged = [...tabs];
-    for (const g of grants.rows) {
-      if (g.role !== role) continue;
-      const tab = MODULE_TAB[g.module_key];
-      if (tab && !merged.includes(tab)) merged.push(tab);
-    }
-    nav[role] = merged;
-  }
+  const nav = buildRoleNavigation(grants.rows);
   const s = await db.query<{
     name: string; tagline: string | null; motto: string | null;
     logo_svg_path: string | null; logo_aspect: string;

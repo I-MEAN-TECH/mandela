@@ -7,6 +7,21 @@ import { Button, Wizard } from "@mandela/ui";
 import type { LearnerRow, PaymentDetails } from "@/lib/api";
 
 const METHODS = ["mpesa", "cash", "bank", "cheque"] as const;
+const INITIAL_LEARNER_LIMIT = 5;
+
+export function paymentLearnerChoices<T extends { name: string; class: string | null; admission_no: string }>(
+  learners: readonly T[],
+  query: string,
+  classFilter: string,
+  showAll: boolean,
+): T[] {
+  const needle = query.trim().toLowerCase();
+  const filtered = learners.filter((learner) =>
+    (!classFilter || learner.class === classFilter) &&
+    (!needle || `${learner.name} ${learner.admission_no}`.toLowerCase().includes(needle)),
+  );
+  return showAll ? filtered : filtered.slice(0, INITIAL_LEARNER_LIMIT);
+}
 
 /**
  * PayForm — docs/SIMPLICITY.md made real: a 3-step wizard with a
@@ -35,6 +50,9 @@ export function PayForm({
   const [chequeNo, setChequeNo] = useState("");
   const [chequeDate, setChequeDate] = useState("");
   const [learnerId, setLearnerId] = useState(learners[0]?.id ?? "");
+  const [learnerQuery, setLearnerQuery] = useState("");
+  const [classFilter, setClassFilter] = useState("");
+  const [showAllLearners, setShowAllLearners] = useState(false);
   const [amount, setAmount] = useState("");
   const [pending, start] = useTransition();
   const [resetKey, setResetKey] = useState(0);
@@ -47,6 +65,9 @@ export function PayForm({
   };
 
   const learner = learners.find((l) => l.id === learnerId);
+  const classNames = [...new Set(learners.map((l) => l.class).filter((value): value is string => Boolean(value)))].sort();
+  const learnerChoices = paymentLearnerChoices(learners, learnerQuery, classFilter, showAllLearners);
+  const filteredLearnerCount = paymentLearnerChoices(learners, learnerQuery, classFilter, true).length;
   const amountNum = Number((amount || "").replace(/,/g, ""));
   const amountValid = Number.isFinite(amountNum) && amountNum > 0 && amountNum <= 10_000_000;
   const sh = (c: number) => `Ksh ${c.toLocaleString("en-KE", { maximumFractionDigits: 0 })}`;
@@ -60,7 +81,30 @@ export function PayForm({
           hint: "Pick the learner this payment is for.",
           content: (
             <div className="grid gap-2">
-              {learners.map((l) => (
+              <div className="grid gap-2 sm:grid-cols-2">
+                <label className="grid gap-1 text-[12px] font-semibold text-ink-700">
+                  Search learner
+                  <input
+                    value={learnerQuery}
+                    onChange={(event) => { setLearnerQuery(event.target.value); setShowAllLearners(false); }}
+                    type="search"
+                    placeholder="Name or admission number"
+                    className="h-10 rounded-sm border border-border bg-surface px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </label>
+                <label className="grid gap-1 text-[12px] font-semibold text-ink-700">
+                  Class
+                  <select
+                    value={classFilter}
+                    onChange={(event) => { setClassFilter(event.target.value); setShowAllLearners(false); }}
+                    className="h-10 rounded-sm border border-border bg-surface px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">All classes</option>
+                    {classNames.map((className) => <option key={className} value={className}>{className}</option>)}
+                  </select>
+                </label>
+              </div>
+              {learnerChoices.map((l) => (
                 <button
                   key={l.id}
                   type="button"
@@ -76,6 +120,16 @@ export function PayForm({
                   {learnerId === l.id ? <Check aria-hidden size={16} className="shrink-0 text-primary" /> : null}
                 </button>
               ))}
+              {filteredLearnerCount === 0 ? <p className="py-2 text-sm text-muted">No learners match these filters.</p> : null}
+              {filteredLearnerCount > INITIAL_LEARNER_LIMIT ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAllLearners((value) => !value)}
+                  className="h-10 rounded-sm border border-border bg-surface px-3 text-sm font-semibold text-primary hover:bg-paper-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                  {showAllLearners ? "Show less" : `View all ${filteredLearnerCount} learners`}
+                </button>
+              ) : null}
             </div>
           ),
           validate: () => (learnerId ? null : "Pick a learner to continue"),

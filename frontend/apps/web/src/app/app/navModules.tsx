@@ -12,6 +12,8 @@ import {
   NotebookPen, ChartNoAxesColumnIncreasing,
   LayoutDashboard, Settings, Route, Check, Store, Sparkles,
   ReceiptText, CalendarClock, UserCog, Activity, UserRoundCheck,
+  House, FileCheck2,
+  Hammer, BookMarked,
 } from "lucide-react";
 
 /**
@@ -38,6 +40,7 @@ export interface NavChild {
  */
 export const TOP_LEVEL_ICONS: Record<string, ReactNode> = {
   Today: <LayoutDashboard size={18} strokeWidth={1.75} aria-hidden />,
+  Home: <House size={18} strokeWidth={1.75} aria-hidden />,
   Money: <Landmark size={18} strokeWidth={1.75} aria-hidden />,
   Spend: <HandCoins size={18} strokeWidth={1.75} aria-hidden />,
   Care: <HeartPulse size={18} strokeWidth={1.75} aria-hidden />,
@@ -82,7 +85,44 @@ export const TOP_LEVEL_ICONS: Record<string, ReactNode> = {
   Department: <Building2 size={18} strokeWidth={1.75} aria-hidden />,
   Marks: <NotebookPen size={18} strokeWidth={1.75} aria-hidden />,
   Coverage: <ChartNoAxesColumnIncreasing size={18} strokeWidth={1.75} aria-hidden />,
+  Transport: <Bus size={18} strokeWidth={1.75} aria-hidden />,
+  Hostel: <Tent size={18} strokeWidth={1.75} aria-hidden />,
+  Facilities: <Hammer size={18} strokeWidth={1.75} aria-hidden />,
+  Library: <BookMarked size={18} strokeWidth={1.75} aria-hidden />,
+  Houses: <Trophy size={18} strokeWidth={1.75} aria-hidden />,
+  Exams: <FileCheck2 size={18} strokeWidth={1.75} aria-hidden />,
 };
+
+/** Visible role navigation must always declare its own semantic glyph. */
+export function iconForTab(tab: string): ReactNode {
+  const icon = TOP_LEVEL_ICONS[tab];
+  if (!icon) throw new Error(`Missing navigation icon for ${tab}`);
+  return icon;
+}
+
+export const TAB_HREFS: Record<string, string> = {
+  Pay: "/app/pay", Homework: "/app/homework", Messages: "/app/messages", Profile: "/app/profile",
+  Today: "/app", Home: "/app", Mark: "/app/mark", Class: "/app/class",
+  Spend: "/app/people/payroll", Care: "/app/people/conduct", Collect: "/app/money",
+  Reconcile: "/app/reconcile", Levies: "/app/levies", Fees: "/app/money/fees",
+  Invoices: "/app/money/invoices", Payroll: "/app/people/payroll", Petty: "/app/money/petty",
+  Purchases: "/app/money/purchases", Reports: "/app/reports", Approve: "/app/approve",
+  Insights: "/app/insights", Broadcast: "/app/broadcast", Directory: "/app/directory",
+  People: "/app/people", Money: "/app/money", Academics: "/app/academics", Settings: "/app/settings",
+  Operations: "/app/operations",
+  Hostel: "/app/operations/hostel", Laundry: "/app/laundry", Facilities: "/app/operations/facilities",
+  Store: "/app/operations/store", Library: "/app/operations/library", Sections: "/app/operations/sections",
+  Houses: "/app/operations/houses", Events: "/app/operations/events", Calendar: "/app/operations/events",
+  Exams: "/app/academics/exams", Transport: "/app/operations/transport", Visitors: "/app/operations/security",
+  Inquiries: "/app/people/admissions",
+};
+
+/** Canonical first-level destination. Unknown navigation data is a contract failure. */
+export function tabToHref(tab: string): string {
+  const href = TAB_HREFS[tab];
+  if (!href) throw new Error(`Missing navigation route for ${tab}`);
+  return href;
+}
 
 const NAV_CHILDREN_RAW: Record<string, Omit<NavChild, "icon">[]> = {
   Money: [
@@ -229,14 +269,19 @@ export const CHILD_ICONS: Record<string, ReactNode> = {
   "Inbox (Approvals & Tasks)": <Inbox size={13} strokeWidth={2} aria-hidden />,
 };
 
+/** Every child label is part of the navigation contract; unknown labels fail loudly. */
+export function iconForChild(label: string): ReactNode {
+  const icon = CHILD_ICONS[label];
+  if (!icon) throw new Error(`Missing navigation icon for child module ${label}`);
+  return icon;
+}
+
 /** One registry decorates every canonical child with its required icon. */
 export const NAV_CHILDREN: Record<string, NavChild[]> = Object.fromEntries(
   Object.entries(NAV_CHILDREN_RAW).map(([parent, children]) => [
     parent,
     children.map((child) => {
-      const icon = CHILD_ICONS[child.label];
-      if (!icon) throw new Error(`Missing navigation icon for ${parent} / ${child.label}`);
-      return { ...child, icon };
+      return { ...child, icon: iconForChild(child.label) };
     }),
   ]),
 );

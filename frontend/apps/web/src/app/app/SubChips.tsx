@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ChevronDown, LayoutGrid, X } from "lucide-react";
-import { NAV_CHILDREN, CHILD_ICONS } from "./navModules";
+import { NAV_CHILDREN, iconForChild } from "./navModules";
 
 /**
  * SubChips — the narrow-screen home of the sub-modules. The sidebar
@@ -123,7 +123,7 @@ export function SubChips() {
                           active ? "bg-primary-soft text-primary" : "bg-paper-100 text-ink-600"
                         }`}
                       >
-                        {CHILD_ICONS[c.label] ?? <LayoutGrid size={14} strokeWidth={1.75} aria-hidden />}
+                        {iconForChild(c.label)}
                       </span>
                       <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{c.label}</span>
                       {active ? <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-pill bg-primary" /> : null}

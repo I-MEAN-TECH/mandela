@@ -15,6 +15,14 @@ import type { TeacherPulseData, BursarPulseData, PrincipalPulseData, CounterPuls
 
 const kes = (cents: string | number) => `Ksh ${Number(cents).toLocaleString("en-KE")}`;
 
+/** The teacher dashboard is a classroom workbench, not a leadership shortcut. */
+export const TEACHER_TOOLS = [
+  { href: "/app/mark", label: "Mark attendance", hint: "Today's roll" },
+  { href: "/app/homework", label: "Set homework", hint: "Due this week" },
+  { href: "/app/class", label: "My class", hint: "Roster + marks" },
+  { href: "/app/messages", label: "Messages", hint: "Parents & staff" },
+] as const;
+
 /**
  * StaffNotice — leadership broadcasts for staff (System completion B1). Shows
  * on every role's Today until this device dismisses it (localStorage). purely
@@ -105,19 +113,9 @@ export function TeacherToday({ p }: { p: TeacherPulseData }) {
 
       {/* The teacher's other accesses, one tap away — report-card desk included. */}
       <Card>
-        <CardHead title="Your tools" sub="Everything the school has given this teacher access to" />
+        <CardHead title="Your tools" sub="Classroom work, one tap away" />
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {[
-            { href: "/app/mark", label: "Mark attendance", hint: "Today's roll" },
-            { href: "/app/homework", label: "Set homework", hint: "Due this week" },
-            { href: "/app/class", label: "My class", hint: "Roster + marks" },
-            { href: "/app/academics/exams", label: "Report cards", hint: "Draft & manage" },
-            { href: "/app/messages", label: "Messages", hint: "Parents & staff" },
-            { href: "/app/insights", label: "Insights", hint: "School trends" },
-            { href: "/app/academics/timetable", label: "Timetable", hint: "Period grid" },
-            { href: "/app/operations/events", label: "Events", hint: "Calendar" },
-            { href: "/app/people/conduct", label: "Conduct", hint: "Merits & demerits" },
-          ].map((t) => (
+          {TEACHER_TOOLS.map((t) => (
             <Link
               key={t.href}
               href={t.href}

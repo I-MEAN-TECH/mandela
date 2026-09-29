@@ -13,6 +13,7 @@
     "seed:demo": "tsx src/scripts/seed-demo.ts",
     "seed:branding": "tsx src/scripts/seed-branding.ts",
     "test:rls": "tsx src/scripts/test-rls.ts",
+    "test:navigation": "tsx src/scripts/test-navigation.ts",
     "security:test": "tsx src/scripts/test-security.ts"
   },
   "dependencies": {

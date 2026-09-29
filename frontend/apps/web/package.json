@@ -8,6 +8,8 @@
     "start": "next start -p 3000",
     "typecheck": "tsc --noEmit",
     "test:navigation": "tsx src/app/app/navModules.test.ts",
+    "test:role-pulses": "tsx src/app/app/RolePulses.test.ts",
+    "test:payments": "tsx src/app/app/money/PayForm.test.ts",
     "check:budget": "node scripts/check-bundle.mjs"
   },
   "dependencies": {

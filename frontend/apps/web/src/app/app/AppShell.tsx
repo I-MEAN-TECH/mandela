@@ -7,12 +7,10 @@ import { NavPill } from "@/components/NavPill";
 import { SearchBox } from "@/components/SearchBox";
 import { BellMenu } from "@/components/BellMenu";
 import { ProfileMenu } from "@/components/ProfileMenu";
-import { NAV_CHILDREN, CHILD_ICONS, TOP_LEVEL_ICONS } from "./navModules";
+import { NAV_CHILDREN, iconForTab, tabToHref } from "./navModules";
 import { SyncBanner } from "@/components/SyncBanner";
 import { InstallPrompt } from "@/components/InstallPrompt";
-import {
-  LayoutDashboard, Sparkles, LogOut,
-} from "lucide-react";
+import { Sparkles, LogOut } from "lucide-react";
 import { SubChips } from "./SubChips";
 
 /** Per-section view (Cards ⇄ List): re-apply the user's stored choice on
@@ -43,54 +41,6 @@ function useViewMode() {
  * topbar (page title, search field, bell with dot, user chip). The profile
  * avatar shows at every width — on phones it is the only account control.
  */
-
-function tabToHref(tab: string, _first: string): string {
-  const map: Record<string, string> = {
-    Pay: "/app/pay",
-    Homework: "/app/homework",
-    Messages: "/app/messages",
-    Profile: "/app/profile",
-    Today: "/app",
-    Home: "/app",
-    Mark: "/app/mark",
-    Class: "/app/class",
-    Spend: "/app/people/payroll",
-    Care: "/app/people/conduct",
-    Collect: "/app/money",
-    Reconcile: "/app/reconcile",
-    Levies: "/app/levies",
-    Fees: "/app/money/fees",
-    Invoices: "/app/money/invoices",
-    Payroll: "/app/people/payroll",
-    Petty: "/app/money/petty",
-    Purchases: "/app/money/purchases",
-    Reports: "/app/reports",
-    Approve: "/app/approve",
-    Insights: "/app/insights",
-    Broadcast: "/app/broadcast",
-    Directory: "/app/directory",
-    People: "/app/people",
-    Money: "/app/money",
-    Academics: "/app/academics",
-    Settings: "/app/settings",
-    // Role-specific tabs across all 12 roles
-    Hostel: "/app/operations/hostel",
-    Laundry: "/app/laundry",
-    Facilities: "/app/operations/facilities",
-    Store: "/app/operations/store",
-    Library: "/app/operations/library",
-    Sections: "/app/operations/sections",
-    Houses: "/app/operations/houses",
-    Events: "/app/operations/events",
-    Calendar: "/app/operations/events",
-    Exams: "/app/academics/exams",
-    Transport: "/app/operations/transport",
-    Visitors: "/app/operations/security",
-    Inquiries: "/app/people/admissions",
-  };
-  if (tab === "Today" || tab === "Home") return "/app";
-  return map[tab] ?? `/app/${tab.toLowerCase()}`;
-}
 
 function initials(name: string): string {
   return name
@@ -166,14 +116,12 @@ export function AppShell({
             responsive
             className="flex flex-col gap-1"
             items={shown.map((tab) => ({
-              href: tabToHref(tab, first),
+              href: tabToHref(tab),
               label: tab,
-              icon: TOP_LEVEL_ICONS[tab] ?? (
-                <LayoutDashboard size={18} strokeWidth={1.75} aria-hidden />
-              ),
+              icon: iconForTab(tab),
               children: NAV_CHILDREN[tab]?.map((c) => ({
                 ...c,
-                icon: CHILD_ICONS[c.label],
+                icon: c.icon,
               })),
             }))}
           />
