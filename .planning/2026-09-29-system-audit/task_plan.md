@@ -45,7 +45,13 @@ Fail closed in production, harden edge/runtime settings, upgrade dependencies, a
 
 ## Next Step
 
-Make every shared KPI card square and add a restrained hover lift/shadow.
+Replace the admissions board partitions with a filterable list.
+
+### Phase 12: Admissions list conversion
+**Status:** complete
+
+Use the fields already available on inquiries to filter one operational list;
+preserve audited stage, enrolment, and lost actions per row.
 
 ### Phase 11: KPI card surface interaction
 **Status:** complete

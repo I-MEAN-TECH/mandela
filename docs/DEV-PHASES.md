@@ -276,3 +276,8 @@ Post-fix numbers above; regression gates all re-green after the fix.
 
 - [x] Make shared KPI cards square and add a reduced-motion-safe hover lift
   with a deeper shadow.
+
+### Admissions list clarity (2026-09-29) — complete
+
+- [x] Replace the horizontal admissions stage-board with one filterable list
+  using existing inquiry fields and actions.

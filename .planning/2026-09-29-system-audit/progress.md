@@ -50,6 +50,8 @@
 - 2026-09-29: Phase 9 complete. Payment and learner contracts, web typecheck, bundle budget, theme policy, whitespace, production build, and live localhost login response verified. Local production web server restarted on port 3000.
 - 2026-09-29: Phase 10 complete. Refactored the shared KpiCard primitive so every dashboard KPI places the metric at top-left, its icon at top-right, and label/support detail below. Legacy KPI calls receive a quiet metric glyph. Typecheck, budget, theme, whitespace, production build, and live login response passed.
 - 2026-09-29: Phase 11 complete. Shared KpiCard surfaces are now square with a motion-safe hover lift and deeper shadow. Typecheck, bundle budget, theme policy, whitespace, production build, and live localhost response passed.
+- 2026-09-29: Phase 12 implementation replaces the partitioned admissions funnel with a searchable/filterable register. Existing stage progression, enrolment dialog, and Lost action remain per row; new filters use only inquiry fields already returned by the API.
+- 2026-09-29: Phase 12 complete. Admissions filter contract, TypeScript, bundle budget, theme policy, whitespace, production build, and local production login response passed. Production web server restarted on port 3000.
 
 ## Errors Encountered
 

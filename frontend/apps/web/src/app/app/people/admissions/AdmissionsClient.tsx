@@ -36,23 +36,38 @@ const STAGE_TONES: Record<string, "ok" | "warn" | "neutral" | "danger"> = {
   lost: "danger",
 };
 
+export type InquiryFilters = { query?: string; stage?: string; level?: string; curriculum?: string; source?: string; followup?: "all" | "due" | "none" };
+type FilterableInquiry = Pick<InquiryRow, "child_first" | "child_last" | "parent_name" | "phone" | "level_interest" | "curriculum_code" | "source" | "stage" | "next_followup_on">;
+
+export function filterInquiries<T extends FilterableInquiry>(rows: T[], filters: InquiryFilters): T[] {
+  const term = filters.query?.trim().toLowerCase() ?? "";
+  return rows.filter((row) => {
+    if (filters.stage && row.stage !== filters.stage) return false;
+    if (filters.level && row.level_interest !== filters.level) return false;
+    if (filters.curriculum && row.curriculum_code !== filters.curriculum) return false;
+    if (filters.source && row.source !== filters.source) return false;
+    if (filters.followup === "due" && !row.next_followup_on) return false;
+    if (filters.followup === "none" && row.next_followup_on) return false;
+    return !term || `${row.child_first} ${row.child_last} ${row.parent_name} ${row.phone}`.toLowerCase().includes(term);
+  });
+}
+
 export function FunnelBoard({ rows, classes }: { rows: InquiryRow[]; classes: { id: number; name: string }[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [moving, setMoving] = useState<InquiryRow | null>(null);
 
-  const byStage = useMemo(() => {
-    const m = new Map<string, InquiryRow[]>();
-    for (const s of STAGES) m.set(s.key, []);
-    m.set("lost", []);
-    for (const r of rows) {
-      const arr = m.get(r.stage);
-      if (arr) arr.push(r);
-      else m.set(r.stage, [r]);
-    }
-    return m;
-  }, [rows]);
+  const [query, setQuery] = useState("");
+  const [stage, setStage] = useState("");
+  const [level, setLevel] = useState("");
+  const [curriculum, setCurriculum] = useState("");
+  const [source, setSource] = useState("");
+  const [followup, setFollowup] = useState<InquiryFilters["followup"]>("all");
+  const filtered = useMemo(() => filterInquiries(rows, { query, stage, level, curriculum, source, followup }), [rows, query, stage, level, curriculum, source, followup]);
+  const levels = useMemo(() => [...new Set(rows.map((row) => row.level_interest).filter((value): value is string => Boolean(value)))].sort(), [rows]);
+  const curricula = useMemo(() => [...new Set(rows.map((row) => row.curriculum_code).filter((value): value is string => Boolean(value)))].sort(), [rows]);
+  const sources = useMemo(() => [...new Set(rows.map((row) => row.source).filter(Boolean))].sort(), [rows]);
 
   function move(id: string, stage: string) {
     start(async () => {
@@ -64,10 +79,17 @@ export function FunnelBoard({ rows, classes }: { rows: InquiryRow[]; classes: { 
 
   return (
     <Card>
-      <CardHead
-        title="The funnel"
-        sub="Every family on file, in the order the school walks them. Tap a card's next stage to move it."
-      />
+      <CardHead title="Admissions register" sub={`${filtered.length} of ${rows.length} families shown. Filter the register, then progress a row.`} />
+      <div className="grid gap-2 border-b border-paper-200 py-s4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Admissions filters">
+        <FilterLabel label="Search family"><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Child, parent or phone" /></FilterLabel>
+        <FilterLabel label="Stage"><select value={stage} onChange={(event) => setStage(event.target.value)}><option value="">All stages</option>{[...STAGES, { key: "lost", label: "Lost" }].map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}</select></FilterLabel>
+        <FilterLabel label="Level"><select value={level} onChange={(event) => setLevel(event.target.value)}><option value="">All levels</option>{levels.map((item) => <option key={item} value={item}>{item}</option>)}</select></FilterLabel>
+        <FilterLabel label="Curriculum"><select value={curriculum} onChange={(event) => setCurriculum(event.target.value)}><option value="">All curricula</option>{curricula.map((item) => <option key={item} value={item}>{item.toUpperCase()}</option>)}</select></FilterLabel>
+        <FilterLabel label="Source"><select value={source} onChange={(event) => setSource(event.target.value)}><option value="">All sources</option>{sources.map((item) => <option key={item} value={item}>{item}</option>)}</select></FilterLabel>
+        <FilterLabel label="Follow-up"><select value={followup} onChange={(event) => setFollowup(event.target.value as InquiryFilters["followup"])}><option value="all">All follow-up states</option><option value="due">Follow-up set</option><option value="none">No follow-up</option></select></FilterLabel>
+      </div>
+      {filtered.length === 0 ? <p className="py-s5 text-[13px] text-ink-500">No family matches these filters.</p> : <div className="overflow-x-auto"><table className="w-full border-collapse text-sm"><thead><tr className="border-b border-border">{["Family", "Stage", "Level", "Curriculum", "Source", "Follow-up", "Actions"].map((heading) => <th key={heading} className="microlabel px-s3 py-s3 text-left">{heading}</th>)}</tr></thead><tbody>{filtered.map((r) => { const next = STAGES[STAGES.findIndex((item) => item.key === r.stage) + 1]; return <tr key={r.id} className="border-b border-paper-200 last:border-0 hover:bg-paper-50"><td className="px-s3 py-s3"><p className="font-semibold text-ink-950">{r.child_first} {r.child_last}</p><p className="text-[11.5px] text-ink-500">{r.parent_name} · {r.phone}</p></td><td className="px-s3 py-s3"><StatusPill tone={STAGE_TONES[r.stage] ?? "neutral"}>{r.stage === "enrolled" && r.admission_no ? r.admission_no : r.stage}</StatusPill></td><td className="px-s3 py-s3 text-ink-700">{r.level_interest ?? "—"}</td><td className="px-s3 py-s3 text-ink-700">{r.curriculum_code?.toUpperCase() ?? "—"}</td><td className="px-s3 py-s3 text-ink-700">{r.source}</td><td className="px-s3 py-s3 text-ink-700">{r.next_followup_on ?? "—"}</td><td className="px-s3 py-s3"><div className="flex justify-end gap-1.5 whitespace-nowrap">{next ? <Button size="sm2" variant="secondary" disabled={pending} onClick={() => next.key === "enrolled" ? setMoving(r) : move(r.id, next.key)}>{next.key === "enrolled" ? "Enrol" : `Move to ${next.label}`}</Button> : null}{r.stage !== "enrolled" && r.stage !== "lost" ? <Button size="sm2" variant="ghost" disabled={pending} onClick={() => move(r.id, "lost")}>Lost</Button> : null}</div></td></tr>; })}</tbody></table></div>}
+      {/*
       <div className="mt-1 overflow-x-auto pb-2">
         <div className="flex min-w-[900px] gap-3">
           {STAGES.map((s) => {
@@ -134,6 +156,7 @@ export function FunnelBoard({ rows, classes }: { rows: InquiryRow[]; classes: { 
           })}
         </div>
       </div>
+      */}
       {msg ? <p className="mt-2 text-[12.5px] text-ink-700" role="status">{msg}</p> : null}
       {moving ? (
         <EnrolDialog
@@ -149,6 +172,10 @@ export function FunnelBoard({ rows, classes }: { rows: InquiryRow[]; classes: { 
       ) : null}
     </Card>
   );
+}
+
+function FilterLabel({ label, children }: { label: string; children: React.ReactNode }) {
+  return <label className="text-[12px] font-semibold text-ink-700">{label}<span className="mt-1 block [&_input]:h-9 [&_input]:w-full [&_input]:rounded-sm [&_input]:border [&_input]:border-paper-300 [&_input]:bg-surface [&_input]:px-2.5 [&_input]:text-[12.5px] [&_select]:h-9 [&_select]:w-full [&_select]:rounded-sm [&_select]:border [&_select]:border-paper-300 [&_select]:bg-surface [&_select]:px-2 [&_select]:text-[12.5px]">{children}</span></label>;
 }
 
 function EnrolDialog({

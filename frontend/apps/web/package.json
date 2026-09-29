@@ -13,6 +13,7 @@
     "test:view-mode": "tsx ../../packages/ui/src/components/ViewMode.test.ts",
     "test:learners": "tsx src/app/app/people/learners/LearnerActions.test.ts",
     "test:ledger": "tsx src/app/app/money/PaymentsLedger.test.ts",
+    "test:admissions": "tsx src/app/app/people/admissions/AdmissionsClient.test.ts",
     "check:budget": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
