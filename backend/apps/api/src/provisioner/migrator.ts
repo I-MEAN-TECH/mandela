@@ -76,6 +76,7 @@ export const SCHOOL_MIGRATIONS: MigrationFile[] = [
   { name: "053_leader_delete_policies.sql", fullPath: SQL_PATHS.schoolLeaderDeletePolicies },
   { name: "054_report_card_delete.sql", fullPath: SQL_PATHS.schoolReportCardDelete },
   { name: "055_timetable_kinds_cbc_subjects.sql", fullPath: SQL_PATHS.schoolTimetableKindsCbc },
+  { name: "056_asset_archive.sql", fullPath: SQL_PATHS.schoolAssetArchive },
 ].map(load);
 
 export const CONTROL_MIGRATIONS: MigrationFile[] = [

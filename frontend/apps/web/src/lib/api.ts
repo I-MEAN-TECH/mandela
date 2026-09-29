@@ -1595,6 +1595,37 @@ export async function adjustStockAction(input: { itemId: string; delta: number; 
   return mutate("/web/admin/store/adjust", input);
 }
 
+// ------------------------- ㊷ Asset Archive (accession register) ---------------
+export interface AssetRow {
+  id: string; department: string; barcode: string; name: string;
+  author: string | null; isbn: string | null; category: string | null;
+  source: string; source_ref: string | null; price_cents: string;
+  received_on: string; condition: string; location: string | null;
+  qty: number; note: string | null;
+}
+export interface AssetTotals { department: string; units: number; value_cents: string; damaged: number }
+export interface AssetArchiveData { rows: AssetRow[]; totals: AssetTotals[] }
+export async function getAssetArchive() {
+  return read<AssetArchiveData | { error: string }>("/web/admin/assets", { error: "unavailable" });
+}
+export async function upsertAssetAction(input: {
+  id?: string; department: string; barcode: string; name: string;
+  author?: string | null; isbn?: string | null; category?: string | null;
+  source?: string | null; sourceRef?: string | null; priceCents?: number | null;
+  receivedOn?: string | null; condition?: string | null; location?: string | null;
+  qty?: number | null; note?: string | null;
+}) {
+  return mutate("/web/admin/assets/upsert", input);
+}
+export async function lookupAssetAction(barcode: string) {
+  return read<{ found: boolean; asset?: AssetRow }>(
+    `/web/admin/assets/lookup?barcode=${encodeURIComponent(barcode)}`,
+    { found: false });
+}
+export async function deleteAssetAction(input: { id: string }) {
+  return mutate("/web/admin/assets/delete", input);
+}
+
 // ------------------------------ ㊶ Board & BOM --------------------------------
 export interface BoardData {
   members: { id: string; full_name: string; office: string; term_end: string | null; phone: string | null; active: boolean }[];

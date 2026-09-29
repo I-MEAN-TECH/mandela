@@ -112,6 +112,7 @@ export const TAB_HREFS: Record<string, string> = {
   Operations: "/app/operations",
   Hostel: "/app/operations/hostel", Laundry: "/app/laundry", Facilities: "/app/operations/facilities",
   Store: "/app/operations/store", Library: "/app/operations/library", Sections: "/app/operations/sections",
+  Archive: "/app/operations/archive",
   Houses: "/app/operations/houses", Events: "/app/operations/events", Calendar: "/app/operations/events",
   Exams: "/app/academics/exams", Transport: "/app/operations/transport", Visitors: "/app/operations/security",
   Inquiries: "/app/people/admissions",

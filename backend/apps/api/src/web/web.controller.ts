@@ -2071,6 +2071,63 @@ export class WebController {
     return web.storeOverview(tenant.dbName, principal);
   }
 
+  // -- asset archive: school-wide accession register (library/lab/dorm/class/office) --
+
+  @Get("admin/assets")
+  async assets(@Req() req: Request) {
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { error: "staff session required" };
+    return web.assetArchive(tenant.dbName, principal);
+  }
+
+  @Post("admin/assets/upsert")
+  @HttpCode(200)
+  async assetUpsert(@Req() req: Request, @Body() body: unknown) {
+    const input = z
+      .object({
+        id: z.string().uuid().optional(),
+        department: z.enum(["library", "lab", "dorm", "class", "office", "other"]),
+        barcode: z.string().min(1).max(60),
+        name: z.string().min(1).max(200),
+        author: z.string().max(160).nullable().optional(),
+        isbn: z.string().max(20).nullable().optional(),
+        category: z.string().max(80).nullable().optional(),
+        source: z.enum(["bought", "donated", "government", "bequest"]).nullable().optional(),
+        sourceRef: z.string().max(160).nullable().optional(),
+        priceCents: z.number().int().min(0).nullable().optional(),
+        receivedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+        condition: z.enum(["good", "worn", "broken", "lost"]).nullable().optional(),
+        location: z.string().max(160).nullable().optional(),
+        qty: z.number().int().min(1).max(10000).nullable().optional(),
+        note: z.string().max(500).nullable().optional(),
+      })
+      .parse(body);
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { ok: false, error: "staff session required" };
+    return web.upsertAsset(tenant.dbName, principal, input);
+  }
+
+  @Get("admin/assets/lookup")
+  async assetLookup(@Req() req: Request, @Query("barcode") barcode: string) {
+    if (!barcode) return { found: false };
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { found: false };
+    return web.lookupAssetByBarcode(tenant.dbName, principal, barcode);
+  }
+
+  @Post("admin/assets/delete")
+  @HttpCode(200)
+  async assetDelete(@Req() req: Request, @Body() body: unknown) {
+    const input = z.object({ id: z.string().uuid() }).parse(body);
+    const tenant = await tenantFromReq(req);
+    const principal = principalFromReq(req);
+    if (!principal || principal.kind !== "staff") return { ok: false, error: "staff session required" };
+    return web.deleteAsset(tenant.dbName, principal, input);
+  }
+
   @Post("admin/store/adjust")
   @HttpCode(200)
   async storeAdjust(@Req() req: Request, @Body() body: unknown) {

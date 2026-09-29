@@ -82,7 +82,18 @@ export function LibraryClient({
   return (
     <div className="grid gap-s4">
       <Card>
-        <CardHead title="Counter" sub="Filter the list to find the borrower, then issue or return on the barcode." />
+        <CardHead
+          title="Counter"
+          sub="Filter the list to find the borrower, then issue or return on the barcode."
+          action={
+            <a
+              href="/app/operations/archive"
+              className="inline-flex h-8 items-center rounded-pill border border-paper-300 px-3.5 text-[12px] font-semibold text-ink-950 hover:border-pine-400 hover:bg-paper-50"
+            >
+              📦 Book archive — record new books
+            </a>
+          }
+        />
         <div className="flex flex-col gap-s3">
           {/* Filters — class / reg no / name, per the counter's daily question. */}
           <div className="flex flex-wrap items-center gap-s2 px-s5 pt-s1" aria-label="Borrower filters">

@@ -36,6 +36,11 @@ const DOORS = [
     title: "Transport",
     sub: "Routes with stops and term fees, buses, manifests, the AM/PM trip log the driver dashboard reads.",
   },
+  {
+    href: "/app/operations/archive",
+    title: "Asset Archive",
+    sub: "The accession register for everything the school owns — books, lab equipment, dorm fit-out, desks and chairs — barcode in hand, scan to record or find.",
+  },
 ];
 
 export default async function OperationsPage() {

@@ -6253,6 +6253,170 @@ export async function addLibraryTitle(
   });
 }
 
+// ---------------------------------------------------------------------------
+// ASSET ARCHIVE — the school-wide asset & accession register (migration 056).
+// Library books (with barcodes), lab equipment, dorm fit-out, classroom and
+// office furniture — every unit recorded at receipt with source, price,
+// condition and location. Scan-to-input: a USB/Bluetooth barcode scanner
+// types into the barcode field and Enter saves.
+// ---------------------------------------------------------------------------
+
+export const ASSET_DEPARTMENTS = ["library", "lab", "dorm", "class", "office", "other"] as const;
+export type AssetDepartment = (typeof ASSET_DEPARTMENTS)[number];
+
+export interface AssetArchiveData {
+  rows: {
+    id: string; department: string; barcode: string; name: string;
+    author: string | null; isbn: string | null; category: string | null;
+    source: string; source_ref: string | null; price_cents: string;
+    received_on: string; condition: string; location: string | null;
+    qty: number; note: string | null;
+  }[];
+  totals: { department: string; units: number; value_cents: string; damaged: number }[];
+}
+
+export async function assetArchive(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+): Promise<AssetArchiveData> {
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    const rows = await c.query<AssetArchiveData["rows"][number]>(
+      `SELECT id::text, department, barcode, name, author, isbn, category,
+              source, source_ref, price_cents::text, received_on::text,
+              condition, location, qty, note
+       FROM asset_archive
+       ORDER BY department, created_at DESC
+       LIMIT 4000`);
+    const totals = await c.query<AssetArchiveData["totals"][number]>(
+      `SELECT department,
+              SUM(qty)::int AS units,
+              SUM(price_cents * qty)::text AS value_cents,
+              COALESCE(SUM(CASE WHEN condition IN ('worn','broken','lost') THEN qty ELSE 0 END), 0)::int AS damaged
+       FROM asset_archive
+       GROUP BY department
+       ORDER BY department`);
+    return { rows: rows.rows, totals: totals.rows };
+  });
+}
+
+export async function upsertAsset(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+  input: {
+    id?: string; department: AssetDepartment; barcode: string; name: string;
+    author?: string | null; isbn?: string | null; category?: string | null;
+    source?: string | null; sourceRef?: string | null; priceCents?: number | null;
+    receivedOn?: string | null; condition?: string | null; location?: string | null;
+    qty?: number | null; note?: string | null;
+  },
+): Promise<{ ok: true; id: string; created: boolean } | { ok: false; error: string }> {
+  if (!["admin", "principal", "teacher", "bursar", "counter"].includes(principal.role ?? "")) throw new Error("staff only");
+  const barcode = input.barcode.trim();
+  if (!barcode) return { ok: false, error: "Barcode is required — scan it or type it" };
+  if (!input.name.trim()) return { ok: false, error: "Name is required" };
+  const qty = Math.max(1, input.qty ?? 1);
+  const source = ["bought", "donated", "government", "bequest"].includes(input.source ?? "") ? input.source! : "bought";
+  const condition = ["good", "worn", "broken", "lost"].includes(input.condition ?? "") ? input.condition! : "good";
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    // Scan-to-input: re-scanning an existing barcode UPDATES that record
+    // (condition, location, qty) instead of failing — the desk workflow is
+    // "scan, adjust, enter", and double-adding a unit is the common error.
+    const existing = await c.query<{ id: string }>(
+      `SELECT id::text FROM asset_archive WHERE barcode = $1`,
+      [barcode]);
+    let id: string;
+    let created: boolean;
+    if (existing.rowCount && !input.id) {
+      id = existing.rows[0]!.id;
+      created = false;
+      const prev = await c.query(`SELECT * FROM asset_archive WHERE id = $1::uuid`, [id]);
+      // A scan usually carries only the changed fields — keep the original
+      // receipt date when the caller doesn't send one.
+      await c.query(
+        `UPDATE asset_archive SET name = $2, author = $3, isbn = $4, category = $5,
+                source = $6, source_ref = $7, price_cents = $8,
+                received_on = COALESCE($9::date, received_on, CURRENT_DATE),
+                condition = $10, location = $11, qty = $12, note = $13, updated_at = now()
+         WHERE id = $1::uuid`,
+        [id, input.name.trim(), input.author ?? null, input.isbn ?? null, input.category ?? null,
+         source, input.sourceRef ?? null, input.priceCents ?? 0, input.receivedOn ?? null,
+         condition, input.location ?? null, qty, input.note ?? null]);
+      await c.query(
+        `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, before, after)
+         VALUES ($1, 'staff', 'asset.update', 'asset_archive', $2, $3, $4)`,
+        [principal.userId, id, JSON.stringify(prev.rows[0]), JSON.stringify(input)]);
+    } else if (input.id) {
+      const prev = await c.query(`SELECT * FROM asset_archive WHERE id = $1::uuid`, [input.id]);
+      if (!prev.rowCount) return { ok: false, error: "Asset not found" };
+      id = input.id;
+      created = false;
+      await c.query(
+        `UPDATE asset_archive SET department = $2, barcode = $3, name = $4, author = $5, isbn = $6,
+                category = $7, source = $8, source_ref = $9, price_cents = $10,
+                received_on = COALESCE($11::date, received_on, CURRENT_DATE),
+                condition = $12, location = $13, qty = $14, note = $15, updated_at = now()
+         WHERE id = $1::uuid`,
+        [id, input.department, barcode, input.name.trim(), input.author ?? null, input.isbn ?? null,
+         input.category ?? null, source, input.sourceRef ?? null, input.priceCents ?? 0,
+         input.receivedOn ?? null, condition, input.location ?? null, qty, input.note ?? null]);
+      await c.query(
+        `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, before, after)
+         VALUES ($1, 'staff', 'asset.update', 'asset_archive', $2, $3, $4)`,
+        [principal.userId, id, JSON.stringify(prev.rows[0]), JSON.stringify(input)]);
+    } else {
+      const ins = await c.query<{ id: string }>(
+        `INSERT INTO asset_archive (department, barcode, name, author, isbn, category, source, source_ref,
+                                    price_cents, received_on, condition, location, qty, note, recorded_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,COALESCE($10::date, CURRENT_DATE),$11,$12,$13,$14,$15)
+         RETURNING id::text`,         [input.department, barcode, input.name.trim(), input.author ?? null, input.isbn ?? null,
+          input.category ?? null, source, input.sourceRef ?? null, input.priceCents ?? 0,
+          input.receivedOn ?? null, condition, input.location ?? null, qty, input.note ?? null,
+          principal.userId]);
+      id = ins.rows[0]!.id;
+      created = true;
+      await c.query(
+        `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, after)
+         VALUES ($1, 'staff', 'asset.add', 'asset_archive', $2, $3)`,
+        [principal.userId, id, JSON.stringify(input)]);
+    }
+    return { ok: true, id, created };
+  });
+}
+
+export async function lookupAssetByBarcode(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+  barcode: string,
+): Promise<{ found: boolean; asset?: AssetArchiveData["rows"][number] }> {
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    const r = await c.query<AssetArchiveData["rows"][number]>(
+      `SELECT id::text, department, barcode, name, author, isbn, category,
+              source, source_ref, price_cents::text, received_on::text,
+              condition, location, qty, note
+       FROM asset_archive WHERE barcode = $1`,
+      [barcode.trim()]);
+    return r.rowCount ? { found: true, asset: r.rows[0]! } : { found: false };
+  });
+}
+
+export async function deleteAsset(
+  dbName: string,
+  principal: Extract<Principal, { kind: "staff" }>,
+  input: { id: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (principal.role !== "admin" && principal.role !== "principal") throw new Error("leaders only");
+  return withSession(dbName, { userId: principal.userId, role: principal.role }, async (c) => {
+    const prev = await c.query(`SELECT * FROM asset_archive WHERE id = $1::uuid`, [input.id]);
+    if (!prev.rowCount) return { ok: false, error: "Asset not found" };
+    await c.query(`DELETE FROM asset_archive WHERE id = $1::uuid`, [input.id]);
+    await c.query(
+      `INSERT INTO audit_log (actor_id, actor_kind, action, entity, entity_id, before)
+       VALUES ($1, 'staff', 'asset.delete', 'asset_archive', $2, $3)`,
+      [principal.userId, input.id, JSON.stringify(prev.rows[0])]);
+    return { ok: true };
+  });
+}
+
 export interface StoreData {
   items: { id: string; name: string; category: string; qty_on_hand: number; low_stock_threshold: number; unit_price: string; low: boolean; section_name: string | null }[];
   low_count: number;
