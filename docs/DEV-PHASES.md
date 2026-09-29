@@ -266,3 +266,8 @@ Post-fix numbers above; regression gates all re-green after the fix.
 
 - [x] Open the full People/Learners workspace from the compact payment picker;
   retain clear per-row View, Edit, and archive/restore actions.
+
+### Shared KPI card hierarchy (2026-09-29) — complete
+
+- [x] Standardize KPI cards: icon at top-right, value at top-left, label and
+  supporting detail beneath; preserve responsive and dark-anchor variants.

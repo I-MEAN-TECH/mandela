@@ -1,12 +1,9 @@
 import { cn } from "../cn";
 
 /**
- * KpiCard — the reference's stat unit, two layouts:
- *
- *  · `icon` layout (the comp): icon in a sage well, delta chip, huge
- *    fluid numeral, label under. One per sector.
- *  · classic layout: label → numeral → note (+ meter/delta), used by the
- *    older screens; unchanged.
+ * KpiCard — one shared hierarchy across every dashboard:
+ * metric at the upper-left, icon at the upper-right, then label and support
+ * detail below. A quiet fallback glyph keeps legacy KPI call sites balanced.
  *
  * `ink` renders the deep-green anchor card (one per screen). Numbers
  * shrink fluidly (text-num) so "Ksh 1,000,000" never spills its card.
@@ -31,7 +28,7 @@ export function KpiCard({
   ink?: boolean;
   meter?: { value: number; ok?: boolean }; // 0..100
   delta?: { text: string; tone: "ok" | "warn" | "danger" | "neutral" };
-  /** Reference layout: icon rendered in a rounded sage well above the number. */
+  /** Icon rendered in the card's upper-right metric well. */
   icon?: React.ReactNode;
   /** Reference layout: quiet top-right action (⋯ menu slot). */
   action?: React.ReactNode;
@@ -40,46 +37,6 @@ export function KpiCard({
 }) {
   const toneText =
     tone === "ok" ? "text-ok" : tone === "danger" ? "text-danger" : tone === "warn" ? "text-warn" : undefined;
-
-  if (icon) {
-    return (
-      <section
-        data-kpi=""
-        className={cn(
-          "flex min-w-0 flex-col rounded border p-s5 shadow-1",
-          ink ? "border-brand-deep bg-brand-deep text-brand-deep-contrast" : "border-border bg-surface",
-          className,
-        )}
-      >
-        <div className="flex items-start justify-between">
-          <span
-            aria-hidden
-            className={cn(
-              "grid h-11 w-11 place-items-center rounded-sm",
-              ink ? "bg-white/10 text-lime-300" : "bg-paper-100 text-pine-700",
-            )}
-          >
-            {icon}
-          </span>
-          {action ? <div className="shrink-0 text-ink-400">{action}</div> : null}
-        </div>
-        {/* ONE anatomy for every stat card: well → numeral → label → note →
-            delta. Deltas pin to the card foot so pills align across the row
-            no matter how long the notes run. */}
-        <p className={cn("numeral mt-s2.5 text-[clamp(1.5rem,1.25rem+1.2vw,2rem)] font-semibold tracking-[-0.01em]", toneText ?? (ink ? "text-brand-deep-contrast" : "text-ink-950"))}>
-          {value}
-        </p>
-        <p className={cn("mt-1 text-[13.5px] font-semibold", ink ? "text-brand-deep-contrast" : "text-ink-950")}>{label}</p>
-        {note ? <p className={cn("mt-0.5 text-[12px] leading-snug", ink ? "text-white/50" : "text-muted")}>{note}</p> : null}
-        {delta ? (
-          <div className="mt-auto pt-s3">
-            <Delta tone={delta.tone}>{delta.text}</Delta>
-          </div>
-        ) : null}
-        {children ? <div className={cn(delta ? "pt-s3" : "mt-auto pt-s3")}>{children}</div> : null}
-      </section>
-    );
-  }
 
   return (
     <section
@@ -90,11 +47,22 @@ export function KpiCard({
         className,
       )}
     >
-      <p className={cn("text-[13px] font-medium text-muted", ink && "text-white/60")}>{label}</p>
-      <p className={cn("numeral mt-s3 text-num font-semibold", toneText, ink && "text-brand-deep-contrast")}>
-        {value}
-      </p>
-      {note ? <p className={cn("mt-2.5 text-[12.5px] leading-snug text-muted", ink && "text-white/60")}>{note}</p> : null}
+      <div className="flex items-start justify-between gap-s3">
+        <p className={cn("numeral min-w-0 text-[clamp(1.5rem,1.25rem+1.2vw,2rem)] font-semibold tracking-[-0.01em]", toneText ?? (ink ? "text-brand-deep-contrast" : "text-ink-950"))}>
+          {value}
+        </p>
+        <div className="flex shrink-0 items-start gap-2">
+          {action ? <div className={cn("text-ink-400", ink && "text-white/60")}>{action}</div> : null}
+          <span
+            aria-hidden
+            className={cn("grid h-11 w-11 place-items-center rounded-sm", ink ? "bg-white/10 text-lime-300" : "bg-paper-100 text-pine-700")}
+          >
+            {icon ?? <MetricGlyph />}
+          </span>
+        </div>
+      </div>
+      <p className={cn("mt-s3 text-[13.5px] font-semibold", ink ? "text-brand-deep-contrast" : "text-ink-950")}>{label}</p>
+      {note ? <p className={cn("mt-0.5 text-[12.5px] leading-snug", ink ? "text-white/60" : "text-muted")}>{note}</p> : null}
       {meter ? (
         <div className={cn("mt-auto pt-s4", meter.value >= 0 && "w-full")}>
           <Meter value={meter.value} ok={meter.ok} onInk={ink} />
@@ -107,6 +75,14 @@ export function KpiCard({
       ) : null}
       {children ? <div className="mt-s4">{children}</div> : null}
     </section>
+  );
+}
+
+function MetricGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M5 19V11M12 19V5M19 19v-7" strokeLinecap="round" />
+    </svg>
   );
 }
 

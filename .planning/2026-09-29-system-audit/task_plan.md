@@ -45,8 +45,14 @@ Fail closed in production, harden edge/runtime settings, upgrade dependencies, a
 
 ## Next Step
 
-Replace payment-picker expansion with a dedicated learner-workspace handoff and
-make row-level learner actions explicit.
+Standardize all shared KPI cards: icon top-right, metric top-left, details
+below, across every dashboard.
+
+### Phase 10: Shared KPI card hierarchy
+**Status:** complete
+
+Update the shared `KpiCard` primitive rather than patching individual pages so
+all dashboard KPIs inherit the requested layout consistently.
 
 ### Phase 9: Payment learner workspace handoff
 **Status:** complete

@@ -48,6 +48,7 @@
 - 2026-09-29: Phase 8 complete. Fresh focused contracts, navigation/payment/role regressions, TypeScript, bundle budget, theme policy, whitespace, production build, and production-browser smoke passed before release preparation.
 - 2026-09-29: Started Phase 9. The payment picker no longer expands inline: View all opens the complete People/Learners workspace. Its rows now make View, Edit, and safe archive/restore explicit; irreversible learner deletion remains intentionally unavailable.
 - 2026-09-29: Phase 9 complete. Payment and learner contracts, web typecheck, bundle budget, theme policy, whitespace, production build, and live localhost login response verified. Local production web server restarted on port 3000.
+- 2026-09-29: Phase 10 complete. Refactored the shared KpiCard primitive so every dashboard KPI places the metric at top-left, its icon at top-right, and label/support detail below. Legacy KPI calls receive a quiet metric glyph. Typecheck, budget, theme, whitespace, production build, and live login response passed.
 
 ## Errors Encountered
 
